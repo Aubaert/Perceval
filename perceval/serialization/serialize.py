@@ -44,6 +44,10 @@ def serialize(m: Matrix) -> str:
 def serialize(state) -> str:
     return serialize_state(state)
 
+@dispatch(str)
+def serialize(string) -> str:
+    return string
+
 
 def serialize_to_file(obj, filepath: str) -> None:
     serial_repr = serialize(obj)
