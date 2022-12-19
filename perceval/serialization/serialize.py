@@ -25,11 +25,14 @@ from multipledispatch import dispatch
 from ._matrix_serialization import serialize_matrix
 from ._circuit_serialization import serialize_circuit
 from ._state_serialization import serialize_state, serialize_statevector, serialize_bssamples
+from ._expression_serialization import serialize_expression
 from perceval.components import ACircuit
 from perceval.utils import Matrix, BasicState, SVDistribution, BSDistribution, BSCount, BSSamples, StateVector, \
     simple_float
 from base64 import b64encode
 import json
+
+from perceval.algorithm.de_solving.differential_equation import Expression, DECollection
 
 
 @dispatch(ACircuit)
@@ -79,6 +82,16 @@ def serialize(obj) -> str:
     return ":PCVL:BSSamples:" + serialize_bssamples(obj)
 
 
+@dispatch(Expression)
+def serialize(obj) -> list:
+    return serialize_expression(obj)
+
+
+@dispatch(DECollection)
+def serialize(obj) -> list:
+    return serialize(obj.des)
+
+
 @dispatch(dict)
 def serialize(obj) -> dict:
     r = {}
@@ -93,6 +106,7 @@ def serialize(obj) -> list:
     for k in obj:
         r.append(serialize(k))
     return r
+
 
 @dispatch(object)
 def serialize(obj) -> object:

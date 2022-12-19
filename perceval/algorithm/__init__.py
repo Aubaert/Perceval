@@ -23,4 +23,5 @@
 from .sampler import Sampler
 from .analyzer import Analyzer
 from .qrng import QRNG
+from .solver import DESolver
 from .de_solving import *
