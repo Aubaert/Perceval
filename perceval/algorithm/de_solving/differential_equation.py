@@ -81,8 +81,8 @@ class DifferentialEquation(Expression):
     def __init__(self, expression: Union[sp.Expr, str, list], weight: Union[float, int] = 1):
         r"""
         :param expression: A Sympy expression or its str representation, or a list of the above.
-        :param weight: The multiplier that will be given to this boundary.
-         Higher values mean this boundary will be more taken into account.
+        :param weight: The multiplier that will be given to this equation.
+         Higher values mean this equation will be more taken into account.
         """
         super().__init__(expression)
         self.weight = weight
@@ -150,6 +150,56 @@ class BCValue(DifferentialEquation):
             expr += "]"
 
         super().__init__(expr, weight=weight)
+
+
+class LinearEquation(DifferentialEquation):
+    r"""
+    Given a (symbolic) array A, linear equation of the form u' = A u.
+    """
+
+    def __init__(self, A, n_eq: Union[int, list] = None, n_input: Union[int, list] = None, weight: Union[float, int] = 1):
+        r"""
+        :param A: a scalar or a matrix. Can be partly composed of sympy Symbols.
+         If it is a scalar, it is converted to A * np.eye(n_eq | len(n_eq))
+        :param n_eq: The number of equations.
+         Can be a list to specify on which u_prime the matrix act (can have repeated / unordered indexes)
+         If A is a scalar and n_eq == 1, it supposes there is exactly one equation in total
+          (use [0] if there is more equations). default: A.shape[0]
+        :param n_input: The number of inputs to use. Can also be a list to specify which inputs the matrix takes.
+         default: A.shape[1]
+        :param weight: The multiplier that will be given to this equation.
+         Higher values mean this equation will be more taken into account.
+        """
+        if isinstance(A, (int, float, sp.Expr)):
+            assert n_eq is not None, "The size of the system must be defined when using scalar"
+            if n_eq == 1:
+                super().__init__(f"- u_prime + {A} * u", weight=weight)
+                return
+
+            if isinstance(n_eq, int):
+                n_eq = list(range(n_eq))
+            A = A * np.eye(len(n_eq))
+
+        if isinstance(n_eq, int):
+            n_eq = list(range(n_eq))
+        if isinstance(n_input, int):
+            n_eq = list(range(n_input))
+
+        if n_eq is None:
+            n_eq = list(range(A.shape[0]))
+        assert len(n_eq) == A.shape[0], f"got {len(n_eq)} equations to set, but matrix has {A.shape[0]} equations"
+
+        if n_input is None:
+            n_input = list(range(A.shape[1]))
+        assert len(n_input) == A.shape[1], f"got {len(n_input)} inputs, but matrix has {A.shape[1]} inputs"
+
+        eq = []
+        for i in range(len(n_eq)):
+            expr = f"- u_prime_{n_eq[i]}"
+            for j in range(len(n_input)):
+                expr += f" + {A[i, j]} * u_{n_input[j]}"
+            eq.append(expr)
+        super().__init__(eq, weight=weight)
 
 
 class DECollection:
