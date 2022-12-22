@@ -26,7 +26,7 @@ from .port import LogicalState
 from .source import Source
 from .linear_circuit import ACircuit
 from .computation import count_TD, count_independant_TD, expand_TD
-from perceval.utils import SVDistribution, BSDistribution, BSSamples, BasicState, StateVector, global_params, Parameter
+from perceval.utils import SVDistribution, BSDistribution, BSSamples, BasicState, StateVector, global_params
 from perceval.backends import BACKEND_LIST
 from perceval.backends.processor import StepperBackend
 
@@ -108,6 +108,7 @@ class Processor(AProcessor):
         """
         input_list = [0] * self.circuit_size
         self._inputs_map = SVDistribution()
+        assert self.m is not None, "A circuit has to be set before the input state"
         expected_input_length = self.m
         assert len(input_state) == expected_input_length, \
             f"Input length not compatible with circuit (expects {expected_input_length}, got {len(input_state)})"
@@ -128,6 +129,14 @@ class Processor(AProcessor):
                 input_idx += 1
             self._inputs_map *= distribution  # combine distributions
 
+        # Needed to do this at the end
+        used_input_map = SVDistribution()
+        for state, prob in self._inputs_map.items():
+            if prob:
+                used_input_map[_find_equivalent(state[0])] += prob
+
+        self._inputs_map = used_input_map
+
         self._input_state = BasicState(input_list)
         self._min_mode_post_select = expected_photons
         if 'mode_post_select' in self._parameters:
@@ -141,6 +150,7 @@ class Processor(AProcessor):
         :param svd: The input SVDistribution which won't be changed in any way by the source.
         Every state vector size has to be equal to `self.circuit_size`
         """
+        assert self.m is not None, "A circuit has to be set before the input distribution"
         self._input_state = svd
         expected_photons = Inf
         for sv in svd:
@@ -154,6 +164,11 @@ class Processor(AProcessor):
         if 'mode_post_select' in self._parameters:
             self._min_mode_post_select = self._parameters['mode_post_select']
 
+    def clear_input_and_circuit(self):
+        super().clear_input_and_circuit()
+        self._inputs_map = None
+        self._simulator = None
+
     def _compose_processor(self, connector, processor, keep_port: bool):
         assert isinstance(processor, Processor), "can not mix types of processors"
         super(Processor, self)._compose_processor(connector, processor, keep_port)
@@ -162,12 +177,9 @@ class Processor(AProcessor):
         assert self._inputs_map is not None, "Input is missing, please call with_inputs()"
         if self._backend_name == "CliffordClifford2017" and self._has_td:
             raise NotImplementedError(
-                "Time delay are not implemented within CliffordClifford2017 backed. Please use another one.")
+                "Time delays are not implemented within CliffordClifford2017 backend. Please use another one.")
         if not self._has_td:  # TODO: remove quickfix by something clever :  self._simulator is None and
             self._setup_simulator()
-
-    def sample_count(self, count: int, progress_callback: Callable = None) -> Dict:
-        raise RuntimeError(f"Cannot call sample_count(). Available method are {self.available_commands}")
 
     def samples(self, count: int, progress_callback=None) -> Dict:
         self._init_command("samples")
@@ -276,9 +288,6 @@ class Processor(AProcessor):
     def available_commands(self) -> List[str]:
         return [BACKEND_LIST[self._backend_name].preferred_command()=="samples" and "samples" or "probs"]
 
-    def get_circuit_parameters(self) -> Dict[str, Parameter]:
-        return {p.name: p for _, c in self._components for p in c.get_parameters()}
-
 
 def _expand_TD_processor(components: list, backend_name: str, depth: int, m: int,
                          input_states: Union[SVDistribution, BasicState], mode_post_select: int,
@@ -294,3 +303,28 @@ def _expand_TD_processor(components: list, backend_name: str, depth: int, m: int
         p.add(r, c)
     p.mode_post_selection(mode_post_select)
     return p
+
+
+def _find_equivalent(state):
+    if not state.has_annotations:
+        return state
+    annot_numbers = dict()
+    i = 0
+    new_state = "|"
+
+    for mode in range(state.m):
+        if not state[mode]:
+            new_state += "0,"
+            continue
+        annotations = state.get_mode_annotations(mode)
+        for n in range(state[mode]):
+            annot = annotations[n]["_"]
+            if annot is not None:
+                nb = int(annot.real)
+                if nb not in annot_numbers:
+                    annot_numbers[nb] = i
+                    i += 1
+                new_state += "{_:" + f"{annot_numbers[nb]}" + "}"
+        new_state += ","
+    new_state = new_state[:-1] + ">"
+    return StateVector(new_state)

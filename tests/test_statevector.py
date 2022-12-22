@@ -217,7 +217,7 @@ def test_sv_parse_tuple_annot():
 
 
 def test_svd_sample():
-    source = pcvl.Source(brightness=1, purity=0.9, indistinguishability=0.9)
+    source = pcvl.Source(emission_probability=1, multiphoton_component=0.1, indistinguishability=0.9)
     qpu = pcvl.Processor("Naive", comp.BS(), source)
     qpu.with_input(pcvl.BasicState([1, 0]))
     sample = qpu.source_distribution.sample(1)
@@ -260,7 +260,7 @@ def test_statevector_measure_1():
     assert str(map_measure_sv[pcvl.BasicState("|1>")][1]) == "|0>"
 
 
-def test_statevector_measure_1():
+def test_statevector_measure_2():
     sv = pcvl.StateVector("|0,1>")+pcvl.StateVector("|1,0>")
     map_measure_sv = sv.measure([0, 1])
     assert len(map_measure_sv) == 2 and\
@@ -272,13 +272,13 @@ def test_statevector_measure_1():
     assert str(map_measure_sv[pcvl.BasicState("|1,0>")][1]) == "|>"
 
 
-def test_statevector_measure_2():
+def test_statevector_measure_3():
     sv = pcvl.StateVector("|0,1,1>")+pcvl.StateVector("|1,1,0>")
     map_measure_sv = sv.measure(1)
     assert len(map_measure_sv) == 1 and\
-           pcvl.AnnotatedBasicState("|1>") in map_measure_sv
-    assert pytest.approx(1) == map_measure_sv[pcvl.AnnotatedBasicState("|1>")][0]
-    assert str(map_measure_sv[pcvl.AnnotatedBasicState("|1>")][1]) == "sqrt(2)/2*|0,1>+sqrt(2)/2*|1,0>"
+           pcvl.BasicState("|1>") in map_measure_sv
+    assert pytest.approx(1) == map_measure_sv[pcvl.BasicState("|1>")][0]
+    assert str(map_measure_sv[pcvl.BasicState("|1>")][1]) == "sqrt(2)/2*|0,1>+sqrt(2)/2*|1,0>"
 
 
 def test_statevector_equality():
