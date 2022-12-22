@@ -98,6 +98,7 @@ class DESolver(AAlgorithm):
         self.analytical_solution = None  # Can be used for display
         self.bounds = bounds
         self.parameters = self.default_parameters
+        self.default_job_name = None
 
     @property
     def de_collection(self):
@@ -232,19 +233,21 @@ class DESolver(AAlgorithm):
         assert self.processor.type == ProcessorType.SIMULATOR, "Impossible to recompute when using a QPU"
         job_context = {"result_mapping": ['perceval.utils', "dict_list_to_numpy"]}
 
-        results = (RemoteJob(self._execute_job("DESolver:compute_curve",
-                                               unitary_parameters=unitary_parameters,
-                                               coefficients=lambda_random),
+        data = self.processor.prepare_job_payload("DESolver:compute_curve")
+        self.update_payload(data, unitary_parameters=unitary_parameters, coefficients=lambda_random)
+        job_name = self.default_job_name if self.default_job_name is not None else "DESolver:compute_curve"
+
+        results = (RemoteJob(data,
                              self.processor.get_rpc_handler(),
+                             job_name,
                              job_context=job_context)
                    .execute_sync()["results"])
 
         self._sigma_Y = results["sigma_Y"]
         return results["function"]
 
-    def _execute_job(self, command, **kwargs):
-
-        args = {
+    def update_payload(self, payload, **kwargs):
+        payload["payload"].update({
             "grid": self.X.tolist() if isinstance(self.X, np.ndarray) else self.X,
             "equations": self.de_collection,
             "equation_parameters": {
@@ -257,12 +260,9 @@ class DESolver(AAlgorithm):
             },
             "solver_parameters": self.parameters,
             **kwargs
-        }
+        })
 
-        def launch(**kwargs2):
-            return self.processor.async_execute(command, **args, **kwargs2)
-
-        return launch
+        return payload
 
     @property
     def solve(self) -> RemoteJob:
@@ -275,8 +275,11 @@ class DESolver(AAlgorithm):
 
         job_context = {"result_mapping": ['perceval.utils', "dict_list_to_numpy"]}
 
-        job = RemoteJob(self._execute_job(solving_fn_name), self.processor.get_rpc_handler(), job_context=job_context)
-        job._fn_name = solving_fn_name
+        data = self.processor.prepare_job_payload(solving_fn_name)
+        self.update_payload(data)
+        job_name = self.default_job_name if self.default_job_name is not None else solving_fn_name
+
+        job = RemoteJob(data, self.processor.get_rpc_handler(), job_name, job_context=job_context)
         return job
 
     def display_job(self, job: RemoteJob, display_curves=False):
@@ -287,7 +290,7 @@ class DESolver(AAlgorithm):
         :param job: A job that has been created through the run function.
         :param display_curves: If True, it will update or create curves of the intermediate results
         """
-        assert hasattr(job, "_fn_name") and job._fn_name == solving_fn_name, "given job is not a Solver's job"
+        assert job._request_data['payload']["command"] == solving_fn_name, "given job is not a solve job"
 
         try:
             res = job.get_results()  # TODO: add possibility to retrieve intermediate results in Jobs
