@@ -20,4 +20,5 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .differential_equation import DifferentialEquation, DECollection, Expression, ProcessX, BCValue, LinearEquation
+from .differential_equation import DifferentialEquation, DECollection, Expression, ProcessX, BCValue, LinearEquation,\
+    AnalyticalSolution

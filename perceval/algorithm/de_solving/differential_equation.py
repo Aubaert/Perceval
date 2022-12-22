@@ -34,7 +34,7 @@ class Expression(ABC):
 
     handle_equation_list = False
 
-    def __init__(self, expression: Union[sp.Expr, str], **kwargs):
+    def __init__(self, expression: Union[sp.Expr, str, list], **kwargs):
         r"""
         :param expression: A Sympy expression or its str representation,
          or a list of the above if the current class can handle them.
@@ -239,7 +239,23 @@ class ProcessX(Expression):
     def create_func(self):
         self._func = expr_to_np(self.expression, ["x"])
 
-    def __call__(self, x):
+    def __call__(self, x: float):
         if self._func is None:
             self.create_func()
         return self._func(x)
+
+
+class AnalyticalSolution(Expression):
+
+    handle_equation_list = True
+
+    def create_func(self):
+        self._func = expr_to_np(self.expression, ["x"])
+
+    def __call__(self, x: np.ndarray):
+        if self._func is None:
+            self.create_func()
+        res = self._func(x)
+        if isinstance(res, list):
+            return np.array(res).swapaxes(0, 1)
+        return np.array(res).reshape((len(res), 1))
