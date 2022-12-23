@@ -34,7 +34,7 @@ class Expression(ABC):
 
     handle_equation_list = False
 
-    def __init__(self, expression: Union[sp.Expr, str, list], **kwargs):
+    def __init__(self, expression: Union[sp.Expr, str, list]):
         r"""
         :param expression: A Sympy expression or its str representation,
          or a list of the above if the current class can handle them.
@@ -106,9 +106,10 @@ class DifferentialEquation(Expression):
     def __call__(self, y_prime: np.ndarray, y: np.ndarray, x: np.ndarray, scalars: list,
                  with_weight=True):
         r"""
-        :param f: A callable representing Y.
-        :param f_prime: A callable representing Y_prime.
-        :param return_abs: If True, returns the absolute value of the evaluation of the boundary function.
+        :param y: The array of functions.
+        :param y_prime: The array of the derivatives of the functions. Can be generated from y using np.gradient.
+        :param x: The grid on which y and y_prime are defined
+        :param scalars: a list of all the scalars. Can be empty if no scalar is needed in the equation.
         :param with_weight: If True, returns the value of the evaluation of the boundary function times the weight.
         :return: The value of the boundary function at the boundary point(s).
          of f and f_prime at these points
@@ -125,7 +126,6 @@ class DifferentialEquation(Expression):
         y.X = x
         weight = (self.weight if with_weight else 1)
         val = self._func(y_prime, y, x, scalars)
-        # TODO: Remove this computation part from the solver
         if isinstance(self.expression, list):
             res = 0
             for i in range(len(self.expression)):

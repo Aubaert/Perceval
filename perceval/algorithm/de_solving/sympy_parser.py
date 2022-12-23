@@ -28,6 +28,14 @@ import numpy as np
 
 
 def _integral_as_trapezoid(expr, lims):
+    """
+    Function to be used by the parser to allow the evaluation of the Integral sympy expression.
+
+    :param expr: expected array resulting of the internal expression of the Integral
+    :param lims: Integral can be defined as Integral(expr, x) in such case lims is the array x,
+     or as Integral(expr, (x, lim_inf, lim_sup)) in such case lims is a tuple of size 3
+    """
+
     if isinstance(lims, tuple):
         var, a, b = lims
     else:
@@ -46,19 +54,26 @@ def _integral_as_trapezoid(expr, lims):
 
 
 def expr_to_np(expr: sp.Expr, inputs: List[str]):
+    # Equivelent to sp.lambdify, but integrate more functions
     return sp.lambdify(inputs, expr, modules=["numpy", {"Integral": _integral_as_trapezoid}])
 
 
 def lambdify_diff_eq(expr: Union[sp.Expr, List[sp.Expr]], n_out: int, n_scalars: int):
+    r"""
+    Generate a lambda function from a DifferentialEquation expression.
+    """
+    # Generate the input names according to the number of elements. Finally, we have 2 * n_out + 1 + n_scalars inputs
     inputs = ["u_prime"] if n_out == 1 else [f"u_prime_{i}" for i in range(n_out)]
     inputs += ["u"] if n_out == 1 else [f"u_{i}" for i in range(n_out)]
     inputs += ["x"]
     inputs += ["scalar"] if n_scalars == 1 else [f"scalar_{i}" for i in range(n_scalars)]
 
+    # allow for evaluating several expressions
     if isinstance(expr, list):
         funcs = [expr_to_np(ss_expr, inputs) for ss_expr in expr]
 
         def expr_list(y_prime, y, x, scalars):
+            # prepare the inputs so that there is the good number of inputs
             y_prime = to_list(y_prime, n_out)
             y = to_list(y, n_out)
 
