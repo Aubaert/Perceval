@@ -512,14 +512,11 @@ class DESolver(AAlgorithm):
                 solution = self.results[i]
                 if (loss_max is None or solution["final_loss"] < loss_max) \
                         and (post_selection_fn is None or post_selection_fn(solution)):
-                    if np.any(self.X != solution["X"]) or recompute:
-                        Y = self.retrieve_solution(i, recompute=True)
-                    else:
-                        Y = solution["function"]
+                    Y = self.retrieve_solution(i)
                     for j in curve_indexes:
                         line, = plt.plot(self.X, Y[:, j], label=f"Solution {i} {self.legend[j]}", **kwargs)
                         if plot_error:
-                            sigma_Y = solution["results"]["sigma_Y"]
+                            sigma_Y = self._sigma_Y
                             plt.fill_between(self.X, Y[:, j] - sigma_Y[:, j], Y[:, j] + sigma_Y[:, j],
                                              color=line.get_color(), alpha=self.plot_opacity)
 
