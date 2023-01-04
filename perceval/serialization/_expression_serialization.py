@@ -19,7 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from perceval.algorithm.de_solving.differential_equation import Expression
+from perceval.algorithm.de_solving.expression import Expression
 
 
 def serialize_expression(expr: Expression):

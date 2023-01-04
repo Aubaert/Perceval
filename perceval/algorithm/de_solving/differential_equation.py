@@ -19,7 +19,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from abc import ABC, abstractmethod
 from typing import Union
 
 import sympy as sp
@@ -28,50 +27,7 @@ import numpy as np
 from multipledispatch import dispatch
 
 from .sympy_parser import lambdify_diff_eq, CallableArray, expr_to_np
-
-
-class Expression(ABC):
-
-    handle_equation_list = False
-
-    def __init__(self, expression: Union[sp.Expr, str, list]):
-        r"""
-        :param expression: A Sympy expression or its str representation,
-         or a list of the above if the current class can handle them.
-        """
-        self._func = None
-        self.expression = expression
-
-    @property
-    def expression(self):
-        return self._expression
-
-    @expression.setter
-    def expression(self, expr):
-        if isinstance(expr, str):
-            expr = sp.parse_expr(expr)
-        if isinstance(expr, list):
-            if not self.handle_equation_list:
-                raise RuntimeError(f"{type(self).__name__} class does not accept lists of equations")
-            for i, ss_expr in enumerate(expr):
-                if isinstance(ss_expr, str):
-                    expr[i] = sp.parse_expr(ss_expr)
-                assert isinstance(expr[i], sp.Expr), "expression must be a sympy expression"
-        else:
-            assert isinstance(expr, sp.Expr), "expression must be a sympy expression"
-
-        self._expression = expr
-
-    @property
-    def sub_properties(self):
-        # Used to serialize important info
-        return None
-
-    @abstractmethod
-    def __call__(self, *args, **kwargs):
-        # Must transform self.expression into a callable if it doesn't exist, using .sympy_parser.expr_to_np for example
-        # then use the arguments to compute it
-        pass
+from .expression import Expression
 
 
 class DifferentialEquation(Expression):
@@ -103,11 +59,9 @@ class DifferentialEquation(Expression):
     def sub_properties(self):
         return self._weight
 
-    def __call__(self, y_prime: np.ndarray, y: np.ndarray, x: np.ndarray, scalars: list,
-                 with_weight=True):
+    def __call__(self, y: np.ndarray, x: np.ndarray, scalars: list, with_weight=True):
         r"""
         :param y: The array of functions.
-        :param y_prime: The array of the derivatives of the functions. Can be generated from y using np.gradient.
         :param x: The grid on which y and y_prime are defined
         :param scalars: a list of all the scalars. Can be empty if no scalar is needed in the equation.
         :param with_weight: If True, returns the value of the evaluation of the boundary function times the weight.
@@ -116,16 +70,14 @@ class DifferentialEquation(Expression):
         """
         if self._func is None:
             try:
-                self.create_func(y_prime.shape[1], len(scalars))
+                self.create_func(y.shape[1], len(scalars))
             except IndexError:  # y_prime has only 1 dimension
                 self.create_func(1, len(scalars))
 
-        y_prime = y_prime.view(CallableArray)
-        y_prime.X = x
         y = y.view(CallableArray)
         y.X = x
         weight = (self.weight if with_weight else 1)
-        val = self._func(y_prime, y, x, scalars)
+        val = self._func(y, x, scalars)
         if isinstance(self.expression, list):
             res = 0
             for i in range(len(self.expression)):
@@ -140,16 +92,22 @@ class BCValue(DifferentialEquation):
 
     def __init__(self, point: Union[float, int], values: Union[list, float, int],
                  weight: Union[float, int] = 1, act_on_derivative=False):
-        used = "u_prime" if act_on_derivative else "u"
-        if not isinstance(values, list):
-            # Single value, suppose n_out = 1
-            expr = f"{used}({point}) - {values}"
-        else:
-            expr = "["
-            expr += ",".join((f"{used}_{i}({point}) - {value}" for i, value in enumerate(values) if value is not None))
-            expr += "]"
+        used = self._used_fn_generator(act_on_derivative)
+
+        expr = []
+        for i, value in enumerate(values):
+            if value is not None:
+                expr.append(used(i).subs("x", point) - value)
 
         super().__init__(expr, weight=weight)
+
+    @staticmethod
+    def _used_fn_generator(act_on_derivative):
+        def used_fn(i):
+            u = sp.Function(f"u_{i}")("x")
+            return sp.Derivative(u, "x") if act_on_derivative else u
+
+        return used_fn
 
 
 class LinearEquation(DifferentialEquation):
@@ -162,9 +120,8 @@ class LinearEquation(DifferentialEquation):
         :param A: a scalar or a matrix. Can be partly composed of sympy Symbols.
          If it is a scalar, it is converted to A * np.eye(n_eq | len(n_eq))
         :param n_eq: The number of equations.
-         Can be a list to specify on which u_prime the matrix act (can have repeated / unordered indexes)
-         If A is a scalar and n_eq == 1, it supposes there is exactly one equation in total
-          (use [0] if there is more equations). default: A.shape[0]
+         Can be a list to specify on which u_prime the matrix act (can have repeated / unordered indexes).
+         default: A.shape[0]
         :param n_input: The number of inputs to use. Can also be a list to specify which inputs the matrix takes.
          default: A.shape[1]
         :param weight: The multiplier that will be given to this equation.
@@ -172,9 +129,6 @@ class LinearEquation(DifferentialEquation):
         """
         if isinstance(A, (int, float, sp.Expr)):
             assert n_eq is not None, "The size of the system must be defined when using scalar"
-            if n_eq == 1:
-                super().__init__(f"- u_prime + {A} * u", weight=weight)
-                return
 
             if isinstance(n_eq, int):
                 n_eq = list(range(n_eq))
@@ -195,9 +149,9 @@ class LinearEquation(DifferentialEquation):
 
         eq = []
         for i in range(len(n_eq)):
-            expr = f"- u_prime_{n_eq[i]}"
+            expr = - sp.Derivative(sp.Function(f"u_{n_eq[i]}")("x"), "x")
             for j in range(len(n_input)):
-                expr += f" + {A[i, j]} * u_{n_input[j]}"
+                expr += A[i, j] * sp.Function(f"u_{n_input[j]}")("x")
             eq.append(expr)
         super().__init__(eq, weight=weight)
 
@@ -227,8 +181,8 @@ class DECollection:
         self._des += dec.des
         return self
 
-    def __call__(self, y_prime: np.ndarray, y: np.ndarray, x: np.ndarray, scalars: list):
-        return np.sum([equation(y_prime, y, x, scalars) for equation in self.des])
+    def __call__(self, y: np.ndarray, x: np.ndarray, scalars: list):
+        return np.sum([equation(y, x, scalars) for equation in self.des])
 
 
 class ProcessX(Expression):

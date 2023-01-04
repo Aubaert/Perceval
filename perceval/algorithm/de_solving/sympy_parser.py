@@ -53,42 +53,62 @@ def _integral_as_trapezoid(expr, lims):
     return trapezoid(expr, var, axis=0)
 
 
+def _derivative_using_gradient(expr, *args):
+    r"""
+    args contains the list of the variables by which the expression must be derived, or tuples of the form (var, nb) if
+     it is a nb order derivative.
+    """
+    for var in args:
+        nb = var[1] if isinstance(var, tuple) else 1
+        x = var[0] if isinstance(var, tuple) else var
+        for _ in range(nb):
+            expr = np.gradient(expr, x, edge_order=2, axis=0)
+
+    return expr
+
+
+def _subs_eval(expr, x, val):
+    expr = expr.view(CallableArray)
+    expr.X = x
+    return expr(val)
+
+
 def expr_to_np(expr: sp.Expr, inputs: List[str]):
-    # Equivelent to sp.lambdify, but integrate more functions
-    return sp.lambdify(inputs, expr, modules=["numpy", {"Integral": _integral_as_trapezoid}])
+    # Equivalent to sp.lambdify, but integrate more functions
+    return sp.lambdify(inputs, expr, modules=["numpy",
+                                              {"Integral": _integral_as_trapezoid,
+                                               "Derivative": _derivative_using_gradient,
+                                               "Subs": _subs_eval}])
 
 
 def lambdify_diff_eq(expr: Union[sp.Expr, List[sp.Expr]], n_out: int, n_scalars: int):
     r"""
     Generate a lambda function from a DifferentialEquation expression.
     """
-    # Generate the input names according to the number of elements. Finally, we have 2 * n_out + 1 + n_scalars inputs
-    inputs = ["u_prime"] if n_out == 1 else [f"u_prime_{i}" for i in range(n_out)]
-    inputs += ["u"] if n_out == 1 else [f"u_{i}" for i in range(n_out)]
+    # Generate the input names according to the number of elements. Finally, we have n_out + 1 + n_scalars inputs
+    inputs = [f"u_{i}" for i in range(n_out)]
     inputs += ["x"]
-    inputs += ["scalar"] if n_scalars == 1 else [f"scalar_{i}" for i in range(n_scalars)]
+    inputs += [f"scalar_{i}" for i in range(n_scalars)]
 
     # allow for evaluating several expressions
     if isinstance(expr, list):
         funcs = [expr_to_np(ss_expr, inputs) for ss_expr in expr]
 
-        def expr_list(y_prime, y, x, scalars):
+        def expr_list(y, x, scalars):
             # prepare the inputs so that there is the good number of inputs
-            y_prime = to_list(y_prime, n_out)
             y = to_list(y, n_out)
 
-            res = [funcs[i](*y_prime, *y, x, *scalars) for i in range(len(funcs))]
+            res = [funcs[i](*y, x, *scalars) for i in range(len(funcs))]
             return res
 
         return expr_list
 
     f = expr_to_np(expr, inputs)
 
-    def expr_fn(y_prime, y, x, scalars):
-        y_prime = to_list(y_prime, n_out)
+    def expr_fn(y, x, scalars):
         y = to_list(y, n_out)
 
-        return f(*y_prime, *y, x, *scalars)
+        return f(*y, x, *scalars)
 
     return expr_fn
 

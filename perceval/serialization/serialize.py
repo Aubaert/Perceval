@@ -29,10 +29,9 @@ from ._expression_serialization import serialize_expression
 from perceval.components import ACircuit
 from perceval.utils import Matrix, BasicState, SVDistribution, BSDistribution, BSCount, BSSamples, StateVector, \
     simple_float
+from perceval.algorithm.de_solving import Expression, DECollection
 from base64 import b64encode
 import json
-
-from perceval.algorithm.de_solving.differential_equation import Expression, DECollection
 
 
 @dispatch(ACircuit)
