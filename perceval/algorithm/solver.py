@@ -351,9 +351,7 @@ class DESolver(AAlgorithm):
 
     def loss_from_curve(self, Y):
         # Assumes X, Y are np.arrays
-        X = self.X
-        Y_prime = np.gradient(Y, X, edge_order=2, axis=0)  # Second order approximation, allows non-constant steps
-        loss = self.de_collection(Y_prime, Y, X, self._scalars)
+        loss = self.de_collection(Y, self.X, self._scalars)
 
         return loss
 
