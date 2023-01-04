@@ -496,19 +496,20 @@ class DESolver(AAlgorithm):
         if best_solution and not plot_solutions:
             min_sol = min([(i, sol) for i, sol in enumerate(self.results)
                            if post_selection_fn is None or post_selection_fn(sol)],
-                          key=lambda sol: sol[1]["final_loss"])
+                          key=lambda sol: sol[1]['results']["final_loss"])
             self.plot(best_solution=False, plot_solutions=True, loss_max=loss_max, recompute=recompute,
                       solution_numbers=[min_sol[0]], with_analytical=False, curve_indexes=curve_indexes)
             if self.nb_scalar:
                 title = ""
                 for i in range(self.nb_scalar):
-                    title += f"{self.scalar_legend[i]} = {min_sol[1]['scalars'][i]}, "
+                    if self.scalar_legend[i]:
+                        title += f"{self.scalar_legend[i]} = {min_sol[1]['results']['scalars'][i]}, "
                 plt.title(title[:-2])
 
         if plot_solutions:
             for i in solution_numbers:
                 solution = self.results[i]
-                if (loss_max is None or solution["final_loss"] < loss_max) \
+                if (loss_max is None or solution["results"]["final_loss"] < loss_max) \
                         and (post_selection_fn is None or post_selection_fn(solution)):
                     Y = self.retrieve_solution(i)
                     for j in curve_indexes:
@@ -533,7 +534,8 @@ class DESolver(AAlgorithm):
             if self.nb_scalar:
                 title = ""
                 for i in range(self.nb_scalar):
-                    title += f"{self.scalar_legend[i]} = {self.post_optimisation_result['scalars'][i]}, "
+                    if self.scalar_legend[i]:
+                        title += f"{self.scalar_legend[i]} = {self.post_optimisation_result['scalars'][i]}, "
                 plt.title(title[:-2])
 
         if self.analytical_solution is not None and with_analytical:

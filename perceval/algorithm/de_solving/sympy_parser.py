@@ -23,7 +23,7 @@ from typing import List, Union
 
 import sympy as sp
 from scipy import interpolate
-from scipy.integrate import trapezoid, cumulative_trapezoid
+from scipy.integrate import cumulative_trapezoid
 import numpy as np
 
 
@@ -35,27 +35,21 @@ def _integral_as_trapezoid(expr, lims):
     :param lims: Integral can be defined as Integral(expr, x) in such case lims is the array x,
      or as Integral(expr, (x, eval_point)) in such case lims is a tuple of size 2
      or as Integral(expr, (x, lim_inf, lim_sup)) in such case lims is a tuple of size 3
-    :returns: if lims is an array, an array of the same size beginning at 0. If
+    :returns: if lims is an array, an array of the same size beginning at 0. If it is a tuple,
+     the value of the integral at eval_point or the area between lim_inf and lim_sup
     """
 
     if isinstance(lims, tuple) and len(lims) == 3:
-        x, a, b = lims
-    else:
-        if isinstance(lims, tuple):
-            x = lims[0]
-            return _subs_eval(cumulative_trapezoid(expr, x, axis=0, initial=0), x, lims[1])
-        return cumulative_trapezoid(expr, lims, axis=0, initial=0)
-    try:
-        select = np.tile(x < a, expr.shape[1])
-    except IndexError:  # expr is a one dimensional array
-        select = x < a
-    expr[select] = 0
-    try:
-        select = np.tile(x > b, expr.shape[1])
-    except IndexError:
-        select = x > b
-    expr[select] = 0
-    return trapezoid(expr, x, axis=0)
+        x, lim_inf, lim_sup = lims
+        integral = cumulative_trapezoid(expr, x, axis=0, initial=0)
+        return _subs_eval(integral, x, lim_sup) - _subs_eval(integral, x, lim_inf)
+
+    if isinstance(lims, tuple):
+        x = lims[0]
+        eval_point = lims[1]
+        return _subs_eval(cumulative_trapezoid(expr, x, axis=0, initial=0), x, eval_point)
+
+    return cumulative_trapezoid(expr, lims, axis=0, initial=0)
 
 
 def _derivative_using_gradient(expr, *args):

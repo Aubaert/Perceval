@@ -21,4 +21,4 @@
 # SOFTWARE.
 
 from .differential_equation import DifferentialEquation, DECollection, Expression, ProcessX, BCValue, LinearEquation,\
-    AnalyticalSolution
+    AnalyticalSolution, ResultPostProcess

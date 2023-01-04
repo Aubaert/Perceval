@@ -30,9 +30,32 @@ from .sympy_parser import lambdify_diff_eq, CallableArray, expr_to_np
 from .expression import Expression
 
 
-class DifferentialEquation(Expression):
+class ResultPostProcess(Expression):
 
     handle_equation_list = True
+
+    def create_func(self, n_out: int, n_scalars: int):
+        self._func = lambdify_diff_eq(self.expression, n_out, n_scalars)
+
+    def __call__(self, y: np.ndarray, x: np.ndarray, scalars: list):
+        r"""
+        :param y: The array of functions.
+        :param x: The grid on which y is defined
+        :param scalars: a list of all the scalars. Can be empty if no scalar is needed in the equation.
+        :return: The post-processed array.
+        """
+        if self._func is None:
+            try:
+                self.create_func(y.shape[1], len(scalars))
+            except IndexError:  # y_prime has only 1 dimension
+                self.create_func(1, len(scalars))
+
+        y = y.view(CallableArray)
+        y.X = x
+        return self._func(y, x, scalars)
+
+
+class DifferentialEquation(ResultPostProcess):
 
     def __init__(self, expression: Union[sp.Expr, str, list], weight: Union[float, int] = 1):
         r"""
@@ -42,9 +65,6 @@ class DifferentialEquation(Expression):
         """
         super().__init__(expression)
         self.weight = weight
-
-    def create_func(self, n_out: int, n_scalars: int):
-        self._func = lambdify_diff_eq(self.expression, n_out, n_scalars)
 
     @property
     def weight(self):
@@ -68,16 +88,8 @@ class DifferentialEquation(Expression):
         :return: The value of the boundary function at the boundary point(s).
          of f and f_prime at these points
         """
-        if self._func is None:
-            try:
-                self.create_func(y.shape[1], len(scalars))
-            except IndexError:  # y_prime has only 1 dimension
-                self.create_func(1, len(scalars))
-
-        y = y.view(CallableArray)
-        y.X = x
         weight = (self.weight if with_weight else 1)
-        val = self._func(y, x, scalars)
+        val = super().__call__(y, x, scalars)
         if isinstance(self.expression, list):
             res = 0
             for i in range(len(self.expression)):
