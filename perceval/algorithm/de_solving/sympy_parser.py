@@ -23,7 +23,7 @@ from typing import List, Union
 
 import sympy as sp
 from scipy import interpolate
-from scipy.integrate import trapezoid
+from scipy.integrate import trapezoid, cumulative_trapezoid
 import numpy as np
 
 
@@ -33,24 +33,29 @@ def _integral_as_trapezoid(expr, lims):
 
     :param expr: expected array resulting of the internal expression of the Integral
     :param lims: Integral can be defined as Integral(expr, x) in such case lims is the array x,
+     or as Integral(expr, (x, eval_point)) in such case lims is a tuple of size 2
      or as Integral(expr, (x, lim_inf, lim_sup)) in such case lims is a tuple of size 3
+    :returns: if lims is an array, an array of the same size beginning at 0. If
     """
 
-    if isinstance(lims, tuple):
-        var, a, b = lims
+    if isinstance(lims, tuple) and len(lims) == 3:
+        x, a, b = lims
     else:
-        var, a, b = lims, min(lims), max(lims)
+        if isinstance(lims, tuple):
+            x = lims[0]
+            return _subs_eval(cumulative_trapezoid(expr, x, axis=0, initial=0), x, lims[1])
+        return cumulative_trapezoid(expr, lims, axis=0, initial=0)
     try:
-        select = np.tile(var < a, expr.shape[1])
+        select = np.tile(x < a, expr.shape[1])
     except IndexError:  # expr is a one dimensional array
-        select = var < a
+        select = x < a
     expr[select] = 0
     try:
-        select = np.tile(var > b, expr.shape[1])
+        select = np.tile(x > b, expr.shape[1])
     except IndexError:
-        select = var > b
+        select = x > b
     expr[select] = 0
-    return trapezoid(expr, var, axis=0)
+    return trapezoid(expr, x, axis=0)
 
 
 def _derivative_using_gradient(expr, *args):
@@ -58,11 +63,16 @@ def _derivative_using_gradient(expr, *args):
     args contains the list of the variables by which the expression must be derived, or tuples of the form (var, nb) if
      it is a nb order derivative.
     """
+    if len(expr.shape) == 1:
+        expr = expr.reshape((len(expr), 1))
     for var in args:
         nb = var[1] if isinstance(var, tuple) else 1
         x = var[0] if isinstance(var, tuple) else var
         for _ in range(nb):
             expr = np.gradient(expr, x, edge_order=2, axis=0)
+
+    if expr.shape[1] == 1:
+        expr = expr.reshape((len(expr),))
 
     return expr
 
@@ -114,7 +124,7 @@ def lambdify_diff_eq(expr: Union[sp.Expr, List[sp.Expr]], n_out: int, n_scalars:
 
 
 def to_list(y, n_out):
-    return [y] if n_out == 1 else [y[:, i] for i in range(n_out)]
+    return [y.reshape((len(y),))] if n_out == 1 else [y[:, i] for i in range(n_out)]
 
 
 class CallableArray(np.ndarray):
@@ -139,3 +149,8 @@ class CallableArray(np.ndarray):
         sliced = super().__getitem__(item)
         sliced.X = self.X
         return sliced
+
+    def reshape(self, shape, order='C'):
+        reshaped = super().reshape(shape, order=order).view(CallableArray)
+        reshaped.X = self.X
+        return reshaped
