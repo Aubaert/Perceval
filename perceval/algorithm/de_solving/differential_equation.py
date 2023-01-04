@@ -193,8 +193,11 @@ class DECollection:
         self._des += dec.des
         return self
 
+    def compute_all_losses(self, y: np.ndarray, x: np.ndarray, scalars: list):
+        return [equation(y, x, scalars) for equation in self.des]
+
     def __call__(self, y: np.ndarray, x: np.ndarray, scalars: list):
-        return np.sum([equation(y, x, scalars) for equation in self.des])
+        return np.sum(self.compute_all_losses(y, x, scalars))
 
 
 class ProcessX(Expression):
