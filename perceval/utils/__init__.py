@@ -30,4 +30,4 @@ from .polarization import Polarization
 from .random import random_seed
 from .globals import global_params
 from .conversion import samples_to_sample_count, samples_to_probs, sample_count_to_samples, sample_count_to_probs,\
-    probs_to_samples, probs_to_sample_count, dict_list_to_numpy
+    probs_to_samples, probs_to_sample_count
