@@ -19,10 +19,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import json
+import io
 from os import path
 from typing import Union
 import json
+
+import numpy as np
 
 from perceval.components import Circuit
 from perceval.utils import Matrix, BSDistribution, SVDistribution, BasicState, BSCount
@@ -31,6 +33,8 @@ from ._state_serialization import deserialize_statevector, deserialize_bssamples
 import perceval.serialization._component_deserialization as _cd
 from perceval.serialization import _schema_circuit_pb2 as pb
 from base64 import b64decode
+
+space_names = [":PCVL:", ":NUMPY:"]
 
 
 def deserialize_float(floatstring):
@@ -105,6 +109,16 @@ def deserialize_bscount(serial_bsc):
     return bsc
 
 
+def deserialize_array(serial_array):
+    memfile = io.BytesIO()  # np.load needs a file
+
+    memfile.write(serial_array.encode('latin-1'))
+    memfile.seek(0)
+    deserialized_array = np.load(memfile)
+    memfile.close()
+    return deserialized_array
+
+
 def deserialize(obj):
     if isinstance(obj, dict):
         r = {}
@@ -114,27 +128,30 @@ def deserialize(obj):
         r = []
         for k in obj:
             r.append(deserialize(k))
-    elif isinstance(obj, str) and obj.startswith(":PCVL:"):
-        p = obj[6:].find(":")
-        cl = obj[6:p+6]
-        sobj = obj[p+7:]
-        if cl == "BasicState":
-            r = BasicState(sobj)
-        elif cl == "StateVector":
-            r = deserialize_statevector(sobj)
-        elif cl == "SVDistribution":
-            r = deserialize_svdistribution(sobj)
-        elif cl == "BSDistribution":
-            r = deserialize_bsdistribution(sobj)
-        elif cl == "BSCount":
-            r = deserialize_bscount(sobj)
-        elif cl == "BSSamples":
-            r = deserialize_bssamples(sobj)
-        elif cl == "Matrix":
-            r = deserialize_matrix(obj)
-        elif cl == "ACircuit":
-            r = deserialize_circuit(obj)
-        else:
+    elif isinstance(obj, str) and any(obj.startswith(name) for name in space_names):
+        [_, name, cl, sobj] = obj.split(":", maxsplit=3)
+        r = None
+        if name == "PCVL":
+            if cl == "BasicState":
+                r = BasicState(sobj)
+            elif cl == "StateVector":
+                r = deserialize_statevector(sobj)
+            elif cl == "SVDistribution":
+                r = deserialize_svdistribution(sobj)
+            elif cl == "BSDistribution":
+                r = deserialize_bsdistribution(sobj)
+            elif cl == "BSCount":
+                r = deserialize_bscount(sobj)
+            elif cl == "BSSamples":
+                r = deserialize_bssamples(sobj)
+            elif cl == "Matrix":
+                r = deserialize_matrix(obj)
+            elif cl == "ACircuit":
+                r = deserialize_circuit(obj)
+        elif name == "NUMPY":
+            if cl == "Array":
+                r = deserialize_array(sobj)
+        if r is None:
             raise NotImplementedError(f"No deserializer found for {cl}")
     else:
         r = obj

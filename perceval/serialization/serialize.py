@@ -19,13 +19,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+import numpy as np
 from multipledispatch import dispatch
 
 from ._matrix_serialization import serialize_matrix
 from ._circuit_serialization import serialize_circuit
 from ._state_serialization import serialize_state, serialize_statevector, serialize_bssamples
 from ._expression_serialization import serialize_expression
+from ._numpy_serialization import serialize_array
 from perceval.components import ACircuit
 from perceval.utils import Matrix, BasicState, SVDistribution, BSDistribution, BSCount, BSSamples, StateVector, \
     simple_float
@@ -37,6 +38,11 @@ import json
 @dispatch(ACircuit)
 def serialize(circuit: ACircuit) -> str:
     return ":PCVL:ACircuit:" + b64encode(serialize_circuit(circuit).SerializeToString()).decode('utf-8')
+
+
+@dispatch(np.ndarray)  # Needed before @dispatch(Matrix) as MatrixN inherits from ndarray, but type must be conserved
+def serialize(obj) -> str:
+    return ":NUMPY:Array:" + serialize_array(obj)
 
 
 @dispatch(Matrix)

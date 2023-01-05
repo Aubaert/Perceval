@@ -21,6 +21,8 @@
 # SOFTWARE.
 
 import random
+
+import numpy as np
 import sympy as sp
 import numpy
 from perceval import Matrix, P, ACircuit, Circuit
@@ -57,6 +59,13 @@ def test_symbolic_matrix_serialization():
     convert_to_numpy = sp.lambdify((), deserialized_mat.subs({'theta': theta_value}), modules=numpy)
     deserialized_mat_num = Matrix(convert_to_numpy())
     assert numpy.allclose(input_mat_num, deserialized_mat_num)
+
+
+def test_numpy_array_serialization():
+    input_array = np.array([[1, 2], [3, 4.6]])
+    serialized_array = serialize(input_array)
+    deserialized_array = deserialize(serialized_array)
+    assert (input_array == deserialized_array).all()
 
 
 def test_symbol_serialization():
