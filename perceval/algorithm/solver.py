@@ -231,7 +231,6 @@ class DESolver(AAlgorithm):
 
     def compute_curve(self, unitary_parameters, lambda_random):
         assert self.processor.type == ProcessorType.SIMULATOR, "Impossible to recompute when using a QPU"
-        job_context = {"result_mapping": ['perceval.utils', "dict_list_to_numpy"]}
 
         data = self.processor.prepare_job_payload("DESolver:compute_curve")
         self.update_payload(data, unitary_parameters=unitary_parameters, coefficients=lambda_random)
@@ -239,8 +238,7 @@ class DESolver(AAlgorithm):
 
         results = (RemoteJob(data,
                              self.processor.get_rpc_handler(),
-                             job_name,
-                             job_context=job_context)
+                             job_name)
                    .execute_sync()["results"])
 
         self._sigma_Y = results["sigma_Y"]
@@ -273,13 +271,11 @@ class DESolver(AAlgorithm):
         self._job_id = None  # Used to reset plot
         self.initiated = True
 
-        job_context = {"result_mapping": ['perceval.utils', "dict_list_to_numpy"]}
-
         data = self.processor.prepare_job_payload(solving_fn_name)
         self.update_payload(data)
         job_name = self.default_job_name if self.default_job_name is not None else solving_fn_name
 
-        job = RemoteJob(data, self.processor.get_rpc_handler(), job_name, job_context=job_context)
+        job = RemoteJob(data, self.processor.get_rpc_handler(), job_name)
         return job
 
     def display_job(self, job: RemoteJob, display_curves=False):

@@ -69,12 +69,3 @@ def sample_count_to_samples(sample_count: BSCount, count: int=None) -> BSSamples
     if count is None:
         count = sum([v for v in sample_count.values()])
     return sample_count_to_probs(sample_count).sample(count)
-
-
-def dict_list_to_numpy(result: dict):
-    for key in result:
-        if isinstance(result[key], dict):
-            result[key] = dict_list_to_numpy(result[key])
-        elif isinstance(result[key], list):
-            result[key] = np.array(result[key])
-    return result
