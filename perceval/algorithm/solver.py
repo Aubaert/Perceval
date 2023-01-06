@@ -19,7 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import Union, List, Tuple, Callable
+from typing import Union, List, Tuple, Callable, Any
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -53,7 +53,7 @@ class DESolver(AAlgorithm):
                  alpha_noise: Union[float, List[float]] = 0,
                  bounds: Union[List[Tuple[float, float]], Tuple[float, float]] = (-10, 10),
                  scalar_bound: Union[List[Tuple[float, float]], Tuple[float, float]] = (-10, 10),
-                 force_scalar_bounds=False):
+                 force_scalar_bounds=False, **kwargs):
         r"""
         :param X: the grid on which the solving will take place (e.g. np.linspace(0, 1, 50))
         :param de_collection: The collection with all boundary conditions and domain differential equations.
@@ -94,7 +94,8 @@ class DESolver(AAlgorithm):
         self.X = X
         self.analytical_solution = None  # Can be used for display
         self.bounds = bounds
-        self.parameters = self.default_parameters
+        self._parameters = dict()
+        self.set_parameters(kwargs)
         self.default_job_name = None
 
     @property
@@ -218,13 +219,31 @@ class DESolver(AAlgorithm):
         self._scalar_bounds = val
 
     @property
-    def default_parameters(self):
-        return {
-            "nf_order": 2,
-            "nf_frequency": 0.15,
-            "resampling_it_number": 0,
-            "gtol": 1e-5,
-        }
+    def parameters(self):
+        return self._parameters
+
+    def set_parameter(self, key: str, value: Any):
+        """
+        Possible fields and values:
+        'nf_order' and 'nf_frequency': order and frequency of low-pass noise filter used on the curves.
+         Order is int (default 2), frequency is float between 0 and 1 (default 0.15).
+        'resampling_it_number': int, if not 0, will recompute probabilities every resampling_it_numbers
+         when optimising using the weights. No re-computation if 0 (default 0).
+        'gtol': float. Gradient tolerance of optimisation (default 1e-5)
+        'conv_crit': float. If the relative difference between the optimisation on weights and on circuit is less than
+         that, consider that the optimisation has ended.
+        'maxiter': int. The maximum number of cycles, a cycle being an optimisation on the weights then an
+         optimisation on the circuit. Not used if no circuit parameters (default 5).
+        'samples': int. The number of samples to be used at each point of the grid (default 100_000)
+        """
+        self._parameters[key] = value
+
+    def set_parameters(self, params: dict):
+        """
+        Updates the parameters from a dict.
+        See set_parameter for more information.
+        """
+        self._parameters.update(params)
 
     def compute_curve(self, unitary_parameters, lambda_random):
         assert self.processor.type == ProcessorType.SIMULATOR, "Impossible to recompute when using a QPU"
@@ -243,12 +262,10 @@ class DESolver(AAlgorithm):
 
     def update_payload(self, payload, **kwargs):
         payload["payload"].update({
-            "grid": self.X.tolist() if isinstance(self.X, np.ndarray) else self.X,
+            "grid": self.X,
             "equations": self.de_collection,
             "equation_parameters": {
-                "nb_out": self.nb_out,
                 "bounds": self.bounds,
-                "nb_scalar": self.nb_scalar,
                 "scalar_bound": self.scalar_bounds,
                 "force_scalar_bounds": self.force_scalar_bounds,
                 "alpha_noise": self.alpha_noise,
