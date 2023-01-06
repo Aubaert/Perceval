@@ -19,13 +19,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+from perceval.runtime.job import Job
 from perceval.components.abstract_processor import AProcessor
 
 
 class AAlgorithm:
     def __init__(self, processor: AProcessor):
         self._processor = processor
+        self._jobs = []
         if not self._check_compatibility():
             raise RuntimeError("Processor and algorithm are not compatible")
         self.default_job_name = None
@@ -35,3 +36,10 @@ class AAlgorithm:
         #     # TODO remote compatibility check
         #     return False
         return True
+
+    def bind_job(self, job: Job):
+        self._jobs.append(job)
+        job.bind_algo(self)
+
+    def store_results(self, job_results, job):
+        pass

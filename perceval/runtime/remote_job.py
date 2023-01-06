@@ -57,6 +57,7 @@ class RemoteJob(Job):
         :param refresh_progress_delay: wait time when running in sync mode between each refresh
         """
         super().__init__(delta_parameters=delta_parameters)
+        self._algo = None
         self._rpc_handler = rpc_handler
         self._job_status = JobStatus()
         self._job_context = job_context
@@ -161,4 +162,10 @@ class RemoteJob(Job):
             # retrieve delta parameters from the response
             self._delta_parameters = results["job_context"].get("mapping_delta_parameters", {})
             results["results"] = result_mapping_function(results["results"], **self._delta_parameters)
+        if self._algo is not None and self.is_complete:
+            self._algo.store_results(results, self)
+            self._algo = None  # Avoid storing results twice
         return results
+    
+    def bind_algo(self, algo):
+        self._algo = algo

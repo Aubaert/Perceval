@@ -23,6 +23,7 @@ from typing import Union, List, Tuple, Callable, Any
 
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib as mpl
 from scipy.optimize import minimize
 
 from perceval.runtime import RemoteProcessor
@@ -245,20 +246,19 @@ class DESolver(AAlgorithm):
         """
         self._parameters.update(params)
 
-    def compute_curve(self, unitary_parameters, lambda_random):
-        assert self.processor.type == ProcessorType.SIMULATOR, "Impossible to recompute when using a QPU"
+    def compute_curve(self, unitary_parameters, lambda_random, recompute=False):
+        """
+        Recompute a solution starting from parameters. If the Processor is a Qpu, it must be forced using recompute.
+        """
+        assert self.processor.type == ProcessorType.SIMULATOR or recompute, "Impossible to recompute when using a QPU"
 
         data = self.processor.prepare_job_payload("DESolver:compute_curve")
         self.update_payload(data, unitary_parameters=unitary_parameters, coefficients=lambda_random)
         job_name = self.default_job_name if self.default_job_name is not None else "DESolver:compute_curve"
 
-        results = (RemoteJob(data,
-                             self.processor.get_rpc_handler(),
-                             job_name)
-                   .execute_sync()["results"])
-
-        self._sigma_Y = results["sigma_Y"]
-        return results["function"]
+        return (RemoteJob(data,
+                          self.processor.get_rpc_handler(),
+                          job_name).execute_sync())
 
     def update_payload(self, payload, **kwargs):
         payload["payload"].update({
@@ -290,17 +290,24 @@ class DESolver(AAlgorithm):
         job_name = self.default_job_name if self.default_job_name is not None else solving_fn_name
 
         job = RemoteJob(data, self.processor.get_rpc_handler(), job_name)
+        self.bind_job(job)
         return job
 
-    def display_job(self, job: RemoteJob, display_curves=False):
+    def bind_job(self, job):
+        assert job._request_data['payload']["command"] == solving_fn_name, "given job is not a solve job"
+        super().bind_job(job)
+        job.i = len(self.results)
+        self.results.append(None)
+
+    def display_job(self, index: int = -1, display_curves=False):
         """
         Call self.pbar(intermediate_result), and update curves if display_curves is True.
         Does nothing if pbar function has not been set or display_curves is False.
         Does not alter the async behaviour of the script.
-        :param job: A job that has been created through the run function.
+        :param index: The index of the job that you want to display.
         :param display_curves: If True, it will update or create curves of the intermediate results
         """
-        assert job._request_data['payload']["command"] == solving_fn_name, "given job is not a solve job"
+        job = self._jobs[index]
 
         try:
             res = job.get_results()  # TODO: add possibility to retrieve intermediate results in Jobs
@@ -365,24 +372,41 @@ class DESolver(AAlgorithm):
 
         return loss
 
+    def store_results(self, job_results, job):
+        self.results[job.i] = job_results
+
     # Post optimisation
-    def retrieve_solution(self, i: int = -1, recompute=False):
+    def retrieve_solution(self, i: int = -1, recompute=False, _grid_changed_ok=True, restore_original=False):
         """
         :param i: The number of the solution. Default to the last computed solution.
         :param recompute: If True, the curve will be computed again. May make the result vary a bit with parameters
          involving random probabilities such as samples.
-        Return the solution array.
+        :param _grid_changed_ok: If False, the grid changed and recompute is False, raise an error.
+        :param restore_original: Put again the primary result into self.results before going further.
+        Return the solution array, and store the result into self.results if it was None or it has changed.
         """
-        assert len(self.results), "missing results"
+        if self.results[i] is None or restore_original:
+            self._jobs[i].get_results()
 
-        if np.any(self.X != self.results[i]["X"]) or recompute:
-            lambda_random = self.results[i]["weights"]
-            unitary_parameters = self.results[i]["unitary_parameters"]
+        res = self.results[i]
 
-            Y = self.compute_curve(unitary_parameters, lambda_random)
-        else:
-            Y = self.results[i]["function"]
-            self._sigma_Y = self.results[i]["results"]["sigma_Y"]
+        assert res is not None, "missing results"
+
+        changed_grid = np.any(self.X != res["X"])
+
+        if changed_grid and recompute:
+            lambda_random = res["weights"]
+            unitary_parameters = res["unitary_parameters"]
+
+            new_results = self.compute_curve(unitary_parameters, lambda_random, recompute)
+
+            res["X"] = new_results["X"]
+            res["results"].update(new_results["results"])
+
+        elif changed_grid and not _grid_changed_ok:
+            raise RuntimeError("Grid cannot be changed without recomputation")
+
+        Y = res["results"]["function"]
 
         return Y
 
@@ -421,8 +445,8 @@ class DESolver(AAlgorithm):
             if (loss_max is None or cur_loss < loss_max) and (post_selection_fn is None or post_selection_fn(solution)):
                 tot_loss += cur_loss
                 kept_losses.append(cur_loss)
-                kept_functions.append(self.retrieve_solution(i, recompute))
-                kept_sigma.append(self._sigma_Y.copy())
+                kept_functions.append(self.retrieve_solution(i, recompute, _grid_changed_ok=False))
+                kept_sigma.append(self.results[i]["sigma_Y"].copy())
                 if self.nb_scalar:
                     kept_scalars.append(solution["scalars"])
                 kept_index.append(i)
@@ -473,13 +497,13 @@ class DESolver(AAlgorithm):
         assert np.all(self.X == self.post_optimisation_result["X"])
         kept_functions = []
         for i in self.post_optimisation_result["indexes"]:
-            kept_functions.append(np.array(self.retrieve_solution(i)))
+            kept_functions.append(np.array(self.retrieve_solution(i, _grid_changed_ok=False)))
 
         return self.post_optimisation_result["coefficients"] @ np.swapaxes(np.array(kept_functions), 0, 1)
 
     def plot(self, best_solution=True, post_optimised=False, plot_solutions=False, loss_max=None, recompute=False,
              solution_numbers: list = None, curve_indexes: list = None, post_selection_fn: Callable = None,
-             with_analytical=True, plot_error=True, **kwargs):
+             with_analytical=True, plot_error=True, where_to_plot=plt, **kwargs):
         r"""
         :param best_solution: If True, the best solution found will be plotted.
          Will ignore loss_max but not post_selection_fn.
@@ -495,10 +519,16 @@ class DESolver(AAlgorithm):
          if the solution must be kept.
         :param with_analytical: If True and an analytical solution has been set, display it.
         :param plot_error: If True, error bar will be displayed around the solutions.
+        :param where_to_plot: pyplot module or ax in case you want to fill a subplot.
 
         Plot the results and the analytical solution if one is provided. Uses the legend to name the curves.
         If there are scalars, their value for the post-optimised solution will be set as title.
         """
+        if isinstance(where_to_plot, mpl.axes.Axes):
+            title_fn = where_to_plot.set_title
+        else:
+            title_fn = where_to_plot.title
+
         if solution_numbers is None:
             solution_numbers = range(len(self.results))
         if curve_indexes is None:
@@ -514,7 +544,7 @@ class DESolver(AAlgorithm):
                 for i in range(self.nb_scalar):
                     if self.scalar_legend[i]:
                         title += f"{self.scalar_legend[i]} = {min_sol[1]['results']['scalars'][i]}, "
-                plt.title(title[:-2])
+                title_fn(title[:-2])
 
         if plot_solutions:
             for i in solution_numbers:
@@ -522,16 +552,17 @@ class DESolver(AAlgorithm):
                 if (loss_max is None or solution["results"]["final_loss"] < loss_max) \
                         and (post_selection_fn is None or post_selection_fn(solution)):
                     Y = self.retrieve_solution(i)
+                    X = self.results[i]["X"]
                     for j in curve_indexes:
-                        line, = plt.plot(self.X, Y[:, j], label=f"Solution {i} {self.legend[j]}", **kwargs)
+                        line, = plt.plot(X, Y[:, j], label=f"Solution {i} {self.legend[j]}", **kwargs)
                         if plot_error:
-                            sigma_Y = self._sigma_Y
-                            plt.fill_between(self.X, Y[:, j] - sigma_Y[:, j], Y[:, j] + sigma_Y[:, j],
+                            sigma_Y = self.results[i]["sigma_Y"]
+                            plt.fill_between(X, Y[:, j] - sigma_Y[:, j], Y[:, j] + sigma_Y[:, j],
                                              color=line.get_color(), alpha=self.plot_opacity)
 
         if post_optimised:
             if self.post_optimisation_result is None or \
-                    np.any(self.X != self.post_optimisation_result["X"]) or recompute:
+                    (np.any(self.X != self.post_optimisation_result["X"]) and recompute):
                 self.post_optimisation(loss_max, recompute=recompute, solution_numbers=solution_numbers,
                                        post_selection_fn=post_selection_fn)
             Y = self.post_optimisation_result["function"]
@@ -546,9 +577,9 @@ class DESolver(AAlgorithm):
                 for i in range(self.nb_scalar):
                     if self.scalar_legend[i]:
                         title += f"{self.scalar_legend[i]} = {self.post_optimisation_result['scalars'][i]}, "
-                plt.title(title[:-2])
+                title_fn(title[:-2])
 
         if self.analytical_solution is not None and with_analytical:
             Y = self.analytical_solution(self.X)
             for j in curve_indexes:
-                plt.plot(self.X, Y[:, j], '--', label=f'Analytical solution {self.legend[j]}')
+                plt.plot(self.X, Y[:, j], '--', label=f'Analytical solution {self.legend[j]}', **kwargs)

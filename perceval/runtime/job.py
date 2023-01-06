@@ -105,3 +105,7 @@ class Job(ABC):
     @abstractmethod
     def cancel(self):
         pass
+
+    def bind_algo(self, algo):
+        # Method used when algo binds a job to itself
+        pass
