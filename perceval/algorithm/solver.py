@@ -31,6 +31,7 @@ from perceval.runtime.remote_job import RemoteJob
 from .differentialEquationSolver.differential_equation import DECollection, Equation
 from perceval.components.abstract_processor import ProcessorType
 from perceval.algorithm.abstract_algorithm import AAlgorithm
+from .differentialEquationSolver.sympy_parser import CallableArray
 
 solving_fn_name = "DESolver:solve"
 
@@ -376,12 +377,11 @@ class DESolver(AAlgorithm):
         self.results[job.i] = job_results
 
     # Post optimisation
-    def retrieve_solution(self, i: int = -1, recompute=False, _grid_changed_ok=True, restore_original=False):
+    def retrieve_solution(self, i: int = -1, recompute=False, restore_original=False):
         """
         :param i: The number of the solution. Default to the last computed solution.
         :param recompute: If True, the curve will be computed again. May make the result vary a bit with parameters
          involving random probabilities such as samples.
-        :param _grid_changed_ok: If False, the grid changed and recompute is False, raise an error.
         :param restore_original: Put again the primary result into self.results before going further.
         Return the solution array, and store the result into self.results if it was None or it has changed.
         """
@@ -402,9 +402,6 @@ class DESolver(AAlgorithm):
 
             res["X"] = new_results["X"]
             res["results"].update(new_results["results"])
-
-        elif changed_grid and not _grid_changed_ok:
-            raise RuntimeError("Grid cannot be changed without recomputation")
 
         Y = res["results"]["function"]
 
@@ -445,8 +442,15 @@ class DESolver(AAlgorithm):
             if (loss_max is None or cur_loss < loss_max) and (post_selection_fn is None or post_selection_fn(solution)):
                 tot_loss += cur_loss
                 kept_losses.append(cur_loss)
-                kept_functions.append(self.retrieve_solution(i, recompute, _grid_changed_ok=False))
-                kept_sigma.append(self.results[i]["sigma_Y"].copy())
+                y = self.retrieve_solution(i, recompute).view(CallableArray)
+                y.X = self.results[i]["X"]
+                y = y(self.X)
+                kept_functions.append(y)
+
+                sigma = self.results[i]["results"]["sigma_Y"].view(CallableArray)
+                sigma.X = self.results[i]["X"]
+                sigma = sigma(self.X)
+                kept_sigma.append(sigma)
                 if self.nb_scalar:
                     kept_scalars.append(solution["scalars"])
                 kept_index.append(i)
