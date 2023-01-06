@@ -55,13 +55,15 @@ class ResultPostProcess(Expression):
         return self._func(y, x, scalars)
 
 
-class DifferentialEquation(ResultPostProcess):
+class Equation(ResultPostProcess):
 
     def __init__(self, expression: Union[sp.Expr, str, list], weight: Union[float, int] = 1):
         r"""
         :param expression: A Sympy expression or its str representation, or a list of the above.
         :param weight: The multiplier that will be given to this equation.
          Higher values mean this equation will be more taken into account.
+
+        Equation under the form expression = 0
         """
         super().__init__(expression)
         self.weight = weight
@@ -85,8 +87,7 @@ class DifferentialEquation(ResultPostProcess):
         :param x: The grid on which y and y_prime are defined
         :param scalars: a list of all the scalars. Can be empty if no scalar is needed in the equation.
         :param with_weight: If True, returns the value of the evaluation of the boundary function times the weight.
-        :return: The value of the boundary function at the boundary point(s).
-         of f and f_prime at these points
+        :return: The error between the solved equation and the result of the expression knowing y, x, and the scalars
         """
         weight = (self.weight if with_weight else 1)
         val = super().__call__(y, x, scalars)
@@ -100,7 +101,7 @@ class DifferentialEquation(ResultPostProcess):
         return weight * res
 
 
-class BCValue(DifferentialEquation):
+class BCValue(Equation):
 
     def __init__(self, point: Union[float, int], values: Union[list, float, int],
                  weight: Union[float, int] = 1, act_on_derivative=False):
@@ -122,7 +123,7 @@ class BCValue(DifferentialEquation):
         return used_fn
 
 
-class LinearEquation(DifferentialEquation):
+class LinearEquation(Equation):
     r"""
     Given a (symbolic) array A, linear equation of the form u' = A u.
     """
@@ -182,14 +183,14 @@ class DECollection:
     def des(self):
         return self._des
 
-    @dispatch(DifferentialEquation)
+    @dispatch(Equation)
     def add(self, de):
         self._des.append(de)
         return self
 
     @dispatch(object)  # Can not dispatch directly DECollection as doesn't exist for now
     def add(self, dec):
-        assert isinstance(dec, DECollection), "Only DifferentialEquation and DECollection can be added"
+        assert isinstance(dec, DECollection), "Only Equation and DECollection can be added"
         self._des += dec.des
         return self
 

@@ -27,7 +27,7 @@ from scipy.optimize import minimize
 
 from perceval.runtime import RemoteProcessor
 from perceval.runtime.remote_job import RemoteJob
-from .de_solving.differential_equation import DECollection, DifferentialEquation
+from .differentialEquationSolver.differential_equation import DECollection, Equation
 from perceval.components.abstract_processor import ProcessorType
 from perceval.algorithm.abstract_algorithm import AAlgorithm
 
@@ -49,7 +49,7 @@ class DESolver(AAlgorithm):
      as well as post-optimisation methods and display methods.
     """
 
-    def __init__(self, X, de_collection: Union[DECollection, DifferentialEquation], processor: RemoteProcessor,
+    def __init__(self, X, de_collection: Union[DECollection, Equation], processor: RemoteProcessor,
                  alpha_noise: Union[float, List[float]] = 0,
                  nb_out: int = 1, nb_scalar: int = 0,
                  bounds: Union[List[Tuple[float, float]], Tuple[float, float]] = (-10, 10),
@@ -89,7 +89,7 @@ class DESolver(AAlgorithm):
         self.pbar = None
         super().__init__(processor)
         self.alpha_noise = alpha_noise
-        if isinstance(de_collection, DifferentialEquation):
+        if isinstance(de_collection, Equation):
             de_collection = DECollection(de_collection)
         self._de_collection = de_collection
         self.nb_out = nb_out

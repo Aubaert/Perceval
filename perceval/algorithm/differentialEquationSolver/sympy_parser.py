@@ -87,12 +87,12 @@ def expr_to_np(expr: sp.Expr, inputs: List[str]):
 
 def lambdify_diff_eq(expr: Union[sp.Expr, List[sp.Expr]], n_out: int, n_scalars: int):
     r"""
-    Generate a lambda function from a DifferentialEquation expression.
+    Generate a lambda function from a Equation expression.
     """
     # Generate the input names according to the number of elements. Finally, we have n_out + 1 + n_scalars inputs
     inputs = [f"u_{i}" for i in range(n_out)]
     inputs += ["x"]
-    inputs += [f"scalar_{i}" for i in range(n_scalars)]
+    inputs += [f"s_{i}" for i in range(n_scalars)]
 
     # allow for evaluating several expressions
     if isinstance(expr, list):
