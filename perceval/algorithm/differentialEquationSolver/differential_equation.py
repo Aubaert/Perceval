@@ -19,7 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import Union
+from typing import Union, List
 
 import sympy as sp
 
@@ -28,6 +28,8 @@ from multipledispatch import dispatch
 
 from .sympy_parser import lambdify_diff_eq, CallableArray, expr_to_np
 from .expression import Expression
+
+from sympy.core.function import AppliedUndef
 
 
 class ResultPostProcess(Expression):
@@ -176,8 +178,9 @@ class DECollection:
 
     def __init__(self, diff_eq=None):
         self._des = []
+        self.all_symbols = set()
         if diff_eq is not None:
-            self._des.append(diff_eq)
+            self.add(diff_eq)
 
     @property
     def des(self):
@@ -186,13 +189,33 @@ class DECollection:
     @dispatch(Equation)
     def add(self, de):
         self._des.append(de)
+        if isinstance(de.expression, list):
+            for expr in de.expression:
+                self.all_symbols |= self._get_symbols(expr)
+        else:
+            self.all_symbols |= self._get_symbols(de.expression)
         return self
 
     @dispatch(object)  # Can not dispatch directly DECollection as doesn't exist for now
     def add(self, dec):
         assert isinstance(dec, DECollection), "Only Equation and DECollection can be added"
         self._des += dec.des
+        self.all_symbols |= dec.all_symbols
         return self
+
+    @property
+    def n_out(self):
+        return max((*(int(str(u)[2:]) + 1 for u in self.all_symbols if str(u)[:2] == "u_"), 0))\
+            if len(self.all_symbols) else 0
+
+    @property
+    def n_scalar(self):
+        return max((*(int(str(s)[2:]) + 1 for s in self.all_symbols if str(s)[:2] == "s_"), 0))\
+            if len(self.all_symbols) else 0
+
+    @staticmethod
+    def _get_symbols(f: sp.Expr):
+        return f.free_symbols | set([i.func for i in f.atoms(sp.Function) if isinstance(i, AppliedUndef)])
 
     def compute_all_losses(self, y: np.ndarray, x: np.ndarray, scalars: list):
         return [equation(y, x, scalars) for equation in self.des]

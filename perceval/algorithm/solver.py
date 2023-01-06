@@ -51,7 +51,6 @@ class DESolver(AAlgorithm):
 
     def __init__(self, X, de_collection: Union[DECollection, Equation], processor: RemoteProcessor,
                  alpha_noise: Union[float, List[float]] = 0,
-                 nb_out: int = 1, nb_scalar: int = 0,
                  bounds: Union[List[Tuple[float, float]], Tuple[float, float]] = (-10, 10),
                  scalar_bound: Union[List[Tuple[float, float]], Tuple[float, float]] = (-10, 10),
                  force_scalar_bounds=False):
@@ -60,8 +59,6 @@ class DESolver(AAlgorithm):
         :param de_collection: The collection with all boundary conditions and domain differential equations.
         :param processor: A RemoteProcessor to perform computation on.
         :param alpha_noise: The penalty coefficient in loss for probability weights.
-        :param nb_out: The number of dimensions of the output.
-        :param nb_scalar: The number of unknown scalars.
         :param bounds: The approximate boundaries that the solution can cover. Can be specified for each dimension.
          Only concerns the starting point, not the results.
         :param scalar_bound: The approximate boundaries that the scalars can cover. Can be specified for each scalar.
@@ -70,10 +67,13 @@ class DESolver(AAlgorithm):
         self.initiated = False
         self._job_id = None
         self._scalars = []
-        self.nb_scalar = nb_scalar
+        if isinstance(de_collection, Equation):
+            de_collection = DECollection(de_collection)
+        self._de_collection = de_collection
+        self.nb_scalar = self._de_collection.n_scalar
         self.scalar_bounds = scalar_bound
         self.force_scalar_bounds = force_scalar_bounds
-        self.scalar_legend = list(range(nb_scalar))
+        self.scalar_legend = list(range(self.nb_scalar))
         self._max_y = None
         self._min_y = None
         self._Y = None
@@ -89,11 +89,8 @@ class DESolver(AAlgorithm):
         self.pbar = None
         super().__init__(processor)
         self.alpha_noise = alpha_noise
-        if isinstance(de_collection, Equation):
-            de_collection = DECollection(de_collection)
-        self._de_collection = de_collection
-        self.nb_out = nb_out
-        self.legend = list(range(nb_out))
+        self.nb_out = self._de_collection.n_out
+        self.legend = list(range(self.nb_out))
         self.X = X
         self.analytical_solution = None  # Can be used for display
         self.bounds = bounds
