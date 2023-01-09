@@ -297,7 +297,6 @@ class DESolver(AAlgorithm):
     def bind_job(self, job):
         assert job._request_data['payload']["command"] == solving_fn_name, "given job is not a solve job"
         super().bind_job(job)
-        job.i = len(self.results)
         self.results.append(None)
 
     def display_job(self, index: int = -1, display_curves=False):
@@ -374,7 +373,10 @@ class DESolver(AAlgorithm):
         return loss
 
     def store_results(self, job_results, job):
-        self.results[job.i] = job_results
+        try:
+            self.results[[j.id for j in self._jobs].index(job.id)] = job_results
+        except ValueError:
+            raise ValueError("job not found in bound jobs")
 
     # Post optimisation
     def retrieve_solution(self, i: int = -1, recompute=False, restore_original=False):
@@ -383,7 +385,7 @@ class DESolver(AAlgorithm):
         :param recompute: If True, the curve will be computed again. May make the result vary a bit with parameters
          involving random probabilities such as samples.
         :param restore_original: Put again the primary result into self.results before going further.
-        Return the solution array, and store the result into self.results if it was None or it has changed.
+        Return the solution array, and store the result into self.results if it was None or if it has changed.
         """
         if self.results[i] is None or restore_original:
             self._jobs[i].get_results()
@@ -392,18 +394,31 @@ class DESolver(AAlgorithm):
 
         assert res is not None, "missing results"
 
-        changed_grid = np.any(self.X != res["X"])
-
-        if changed_grid and recompute:
-            lambda_random = res["weights"]
-            unitary_parameters = res["unitary_parameters"]
+        if recompute:
+            lambda_random = res["results"]["weights"]
+            unitary_parameters = res["results"]["circuit_parameters"]
 
             new_results = self.compute_curve(unitary_parameters, lambda_random, recompute)
 
             res["X"] = new_results["X"]
             res["results"].update(new_results["results"])
 
+        changed_grid = np.any(self.X != res["X"])
+
         Y = res["results"]["function"]
+        sigma_Y = res["results"]["sigma_Y"]
+
+        if changed_grid:
+            Y = Y.view(CallableArray)
+            Y.X = res["X"]
+            Y = Y(self.X)
+
+            sigma_Y = sigma_Y.view(CallableArray)
+            sigma_Y.X = res["X"]
+            self._sigma_Y = sigma_Y(self.X)
+
+        else:
+            self._sigma_Y = sigma_Y
 
         return Y
 
@@ -442,15 +457,9 @@ class DESolver(AAlgorithm):
             if (loss_max is None or cur_loss < loss_max) and (post_selection_fn is None or post_selection_fn(solution)):
                 tot_loss += cur_loss
                 kept_losses.append(cur_loss)
-                y = self.retrieve_solution(i, recompute).view(CallableArray)
-                y.X = self.results[i]["X"]
-                y = y(self.X)
+                y = self.retrieve_solution(i, recompute)
                 kept_functions.append(y)
-
-                sigma = self.results[i]["results"]["sigma_Y"].view(CallableArray)
-                sigma.X = self.results[i]["X"]
-                sigma = sigma(self.X)
-                kept_sigma.append(sigma)
+                kept_sigma.append(self._sigma_Y)
                 if self.nb_scalar:
                     kept_scalars.append(solution["scalars"])
                 kept_index.append(i)
@@ -501,7 +510,7 @@ class DESolver(AAlgorithm):
         assert np.all(self.X == self.post_optimisation_result["X"])
         kept_functions = []
         for i in self.post_optimisation_result["indexes"]:
-            kept_functions.append(np.array(self.retrieve_solution(i, _grid_changed_ok=False)))
+            kept_functions.append(np.array(self.retrieve_solution(i)))
 
         return self.post_optimisation_result["coefficients"] @ np.swapaxes(np.array(kept_functions), 0, 1)
 
@@ -555,20 +564,18 @@ class DESolver(AAlgorithm):
                 solution = self.results[i]
                 if (loss_max is None or solution["results"]["final_loss"] < loss_max) \
                         and (post_selection_fn is None or post_selection_fn(solution)):
-                    Y = self.retrieve_solution(i)
-                    X = self.results[i]["X"]
+                    Y = self.retrieve_solution(i, recompute)
                     for j in curve_indexes:
-                        line, = plt.plot(X, Y[:, j], label=f"Solution {i} {self.legend[j]}", **kwargs)
+                        line, = plt.plot(self.X, Y[:, j], label=f"Solution {i} {self.legend[j]}", **kwargs)
                         if plot_error:
-                            sigma_Y = self.results[i]["sigma_Y"]
-                            plt.fill_between(X, Y[:, j] - sigma_Y[:, j], Y[:, j] + sigma_Y[:, j],
+                            sigma_Y = self._sigma_Y
+                            plt.fill_between(self.X, Y[:, j] - sigma_Y[:, j], Y[:, j] + sigma_Y[:, j],
                                              color=line.get_color(), alpha=self.plot_opacity)
 
         if post_optimised:
             if self.post_optimisation_result is None or \
                     (np.any(self.X != self.post_optimisation_result["X"]) and recompute):
-                self.post_optimisation(loss_max, recompute=recompute, solution_numbers=solution_numbers,
-                                       post_selection_fn=post_selection_fn)
+                self.post_optimisation(loss_max, solution_numbers=solution_numbers, post_selection_fn=post_selection_fn)
             Y = self.post_optimisation_result["function"]
             for j in curve_indexes:
                 line, = plt.plot(self.X, Y[:, j], ".", label=f"Post optimised solution {self.legend[j]}", **kwargs)

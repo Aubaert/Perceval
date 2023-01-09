@@ -164,7 +164,6 @@ class RemoteJob(Job):
             results["results"] = result_mapping_function(results["results"], **self._delta_parameters)
         if self._algo is not None and self.is_complete:
             self._algo.store_results(results, self)
-            self._algo = None  # Avoid storing results twice
         return results
     
     def bind_algo(self, algo):
