@@ -247,12 +247,10 @@ class DESolver(AAlgorithm):
         """
         self._parameters.update(params)
 
-    def compute_curve(self, unitary_parameters, lambda_random, recompute=False):
+    def compute_curve(self, unitary_parameters, lambda_random):
         """
         Recompute a solution starting from parameters. If the Processor is a Qpu, it must be forced using recompute.
         """
-        assert self.processor.type == ProcessorType.SIMULATOR or recompute, "Impossible to recompute when using a QPU"
-
         data = self.processor.prepare_job_payload("DESolver:compute_curve")
         self.update_payload(data, unitary_parameters=unitary_parameters, coefficients=lambda_random)
         job_name = self.default_job_name if self.default_job_name is not None else "DESolver:compute_curve"
@@ -379,13 +377,15 @@ class DESolver(AAlgorithm):
             raise ValueError("job not found in bound jobs")
 
     # Post optimisation
-    def retrieve_solution(self, i: int = -1, recompute=False, restore_original=False):
+    def retrieve_solution(self, i: int = -1, recompute=False, restore_original=False, store_new=False):
         """
         :param i: The number of the solution. Default to the last computed solution.
         :param recompute: If True, the curve will be computed again. May make the result vary a bit with parameters
          involving random probabilities such as samples.
         :param restore_original: Put again the primary result into self.results before going further.
-        Return the solution array, and store the result into self.results if it was None or if it has changed.
+        :param store_new: if True, the results of this function will replace the original results in self.results
+
+        Return the solution array, and store the result into self.results if it was None or if store_new.
         """
         if self.results[i] is None or restore_original:
             self._jobs[i].get_results()
@@ -398,27 +398,35 @@ class DESolver(AAlgorithm):
             lambda_random = res["results"]["weights"]
             unitary_parameters = res["results"]["circuit_parameters"]
 
-            new_results = self.compute_curve(unitary_parameters, lambda_random, recompute)
+            new_results = self.compute_curve(unitary_parameters, lambda_random)
 
-            res["X"] = new_results["X"]
-            res["results"].update(new_results["results"])
+            X = new_results["X"]
+            Y = new_results["results"]["function"]
+            sigma_Y = new_results["results"]["sigma_Y"]
 
-        changed_grid = np.any(self.X != res["X"])
+        else:
+            X = res["X"]
+            Y = res["results"]["function"]
+            sigma_Y = res["results"]["sigma_Y"]
 
-        Y = res["results"]["function"]
-        sigma_Y = res["results"]["sigma_Y"]
+        changed_grid = np.any(self.X != X)
 
         if changed_grid:
             Y = Y.view(CallableArray)
-            Y.X = res["X"]
+            Y.X = X
             Y = Y(self.X)
 
             sigma_Y = sigma_Y.view(CallableArray)
-            sigma_Y.X = res["X"]
+            sigma_Y.X = X
             self._sigma_Y = sigma_Y(self.X)
 
         else:
             self._sigma_Y = sigma_Y
+
+        if store_new:
+            self.results[i]["X"] = self.X
+            self.results[i]["results"]["function"] = Y
+            self.results[i]["results"]["sigma_Y"] = self._sigma_Y
 
         return Y
 
