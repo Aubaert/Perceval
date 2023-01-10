@@ -108,6 +108,8 @@ class BCValue(Equation):
     def __init__(self, point: Union[float, int], values: Union[list, float, int],
                  weight: Union[float, int] = 1, act_on_derivative=False):
         used = self._used_fn_generator(act_on_derivative)
+        if not isinstance(values, list):
+            values = [values]
 
         expr = []
         for i, value in enumerate(values):

@@ -247,19 +247,19 @@ class DESolver(AAlgorithm):
         """
         self._parameters.update(params)
 
-    def compute_curve(self, unitary_parameters, lambda_random):
+    def _compute_curve(self, circuit_parameters, coefficients):
         """
         Recompute a solution starting from parameters. If the Processor is a Qpu, it must be forced using recompute.
         """
         data = self.processor.prepare_job_payload("DESolver:compute_curve")
-        self.update_payload(data, unitary_parameters=unitary_parameters, coefficients=lambda_random)
+        self._update_payload(data, circuit_parameters=circuit_parameters, coefficients=coefficients)
         job_name = self.default_job_name if self.default_job_name is not None else "DESolver:compute_curve"
 
         return (RemoteJob(data,
                           self.processor.get_rpc_handler(),
                           job_name).execute_sync())
 
-    def update_payload(self, payload, **kwargs):
+    def _update_payload(self, payload, **kwargs):
         payload["payload"].update({
             "grid": self.X,
             "equations": self.de_collection,
@@ -285,7 +285,7 @@ class DESolver(AAlgorithm):
         self.initiated = True
 
         data = self.processor.prepare_job_payload(solving_fn_name)
-        self.update_payload(data)
+        self._update_payload(data)
         job_name = self.default_job_name if self.default_job_name is not None else solving_fn_name
 
         job = RemoteJob(data, self.processor.get_rpc_handler(), job_name)
@@ -395,10 +395,10 @@ class DESolver(AAlgorithm):
         assert res is not None, "missing results"
 
         if recompute:
-            lambda_random = res["results"]["weights"]
-            unitary_parameters = res["results"]["circuit_parameters"]
+            coefficients = res["results"]["weights"]
+            circuit_parameters = res["results"]["circuit_parameters"]
 
-            new_results = self.compute_curve(unitary_parameters, lambda_random)
+            new_results = self._compute_curve(circuit_parameters, coefficients)
 
             X = new_results["X"]
             Y = new_results["results"]["function"]
