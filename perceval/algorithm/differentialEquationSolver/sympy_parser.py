@@ -52,6 +52,15 @@ def _integral_as_trapezoid(expr, lims):
     return cumulative_trapezoid(expr, lims, axis=0, initial=0)
 
 
+def _integral(expr, *lims):
+    """
+    Handle cases such Integral(expr, x, x) or Integral(expr, x, (x, 0, 1))
+    """
+    for lim in lims:
+        expr = _integral_as_trapezoid(expr, lim)
+    return expr
+
+
 def _derivative_using_gradient(expr, *args):
     r"""
     args contains the list of the variables by which the expression must be derived, or tuples of the form (var, nb) if
@@ -80,7 +89,7 @@ def _subs_eval(expr, x, val):
 def expr_to_np(expr: sp.Expr, inputs: List[str]):
     # Equivalent to sp.lambdify, but integrate more functions
     return sp.lambdify(inputs, expr, modules=["numpy",
-                                              {"Integral": _integral_as_trapezoid,
+                                              {"Integral": _integral,
                                                "Derivative": _derivative_using_gradient,
                                                "Subs": _subs_eval}])
 
