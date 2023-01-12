@@ -93,13 +93,7 @@ class Equation(ResultPostProcess):
         """
         weight = (self.weight if with_weight else 1)
         val = super().__call__(y, x, scalars)
-        if isinstance(self.expression, list):
-            res = 0
-            for i in range(len(self.expression)):
-                res += np.sum(val[i] ** 2) / \
-                       (1 if not isinstance(val[i], np.ndarray) or val[i].shape == tuple() else val[i].shape[0])
-        else:
-            res = np.sum(val ** 2) / (1 if not isinstance(val, np.ndarray) or val.shape == tuple() else val.shape[0])
+        res = np.sum(val ** 2) / (1 if not isinstance(val, np.ndarray) or val.shape == tuple() else val.shape[0])
         return weight * res
 
 

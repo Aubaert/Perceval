@@ -103,7 +103,7 @@ def lambdify_diff_eq(expr: Union[sp.Expr, List[sp.Expr]], n_out: int, n_scalars:
             y = to_list(y, n_out)
 
             res = [funcs[i](*y, x, *scalars) for i in range(len(funcs))]
-            return res
+            return np.array(res).transpose()
 
         return expr_list
 

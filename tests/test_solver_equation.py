@@ -71,8 +71,8 @@ def test_multiple_eq():
 
     res = equation(test_array, test_array, [])
 
-    assert pytest.approx(res[0]) == test_array ** 2 / 2
-    assert pytest.approx(res[1]) == np.ones_like(test_array)
+    assert pytest.approx(res[:, 0]) == test_array ** 2 / 2
+    assert pytest.approx(res[:, 1]) == np.ones_like(test_array)
 
 
 def test_multiple_fn_scalars():

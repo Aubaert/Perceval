@@ -461,7 +461,8 @@ class DESolver(AAlgorithm):
             solution_numbers = range(len(self.results))
         for i in solution_numbers:
             solution = self.results[i]
-            cur_loss = solution["final_loss"]
+            results = solution["results"]
+            cur_loss = results["final_loss"]
             if (loss_max is None or cur_loss < loss_max) and (post_selection_fn is None or post_selection_fn(solution)):
                 tot_loss += cur_loss
                 kept_losses.append(cur_loss)
@@ -469,10 +470,13 @@ class DESolver(AAlgorithm):
                 kept_functions.append(y)
                 kept_sigma.append(self._sigma_Y)
                 if self.nb_scalar:
-                    kept_scalars.append(solution["scalars"])
+                    kept_scalars.append(results["scalars"])
                 kept_index.append(i)
                 if loss_max is None and cur_loss > real_loss_max:
                     real_loss_max = cur_loss
+
+        if not len(kept_index):
+            raise RuntimeError("0 selected result to perform post-optimisation on")
 
         real_loss_max = loss_max or real_loss_max
 
