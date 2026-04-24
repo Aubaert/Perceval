@@ -162,11 +162,11 @@ class Processor(AProcessor):
         """
         return self.experiment.unitary_circuit(flatten=flatten, use_phase_noise=True)
 
-    @dispatch(CoherentState, object, object, object)
-    def _samples(self, input_state: CoherentState, max_samples: int, max_shots: int | None, progress_callback):
-        raise ValueError( "A CoherentState can't be used for sampling")
-
     @dispatch(object, object, object, object)
+    def _samples(self, input_state, max_samples: int, max_shots: int | None, progress_callback):
+        raise ValueError(f"A {type(input_state).__name__} can't be used as input for sampling")
+
+    @dispatch((BasicState, SVDistribution), object, object, object)
     def _samples(self, input_state, max_samples: int, max_shots: int | None, progress_callback):
         self.check_min_detected_photons_filter()
 
@@ -198,7 +198,7 @@ class Processor(AProcessor):
     def samples(self, max_samples: int, max_shots: int = None, progress_callback=None) -> dict:
         return self._samples(self.input_state, max_samples, max_shots, progress_callback)
 
-    @dispatch(object, object)
+    @dispatch((BasicState, SVDistribution), object)
     def _probs(self, input_state, progress_callback: callable):
         self._simulator.keep_heralds(False)
         self._simulator.compute_physical_logical_perf(self._compute_physical_logical_perf)
@@ -208,6 +208,10 @@ class Processor(AProcessor):
     @dispatch(CoherentState, object)
     def _probs(self, input_state: CoherentState, progress_callback: callable) -> dict:
         return {"results": self._simulator.evolve(input_state)}
+
+    @dispatch(object, object)
+    def _probs(self, input_state: CoherentState, progress_callback: callable) -> dict:
+        raise ValueError(f"A {type(input_state).__name__} can't be used as input for probability computation")
 
     def probs(self, precision: float = None, progress_callback: callable = None) -> dict:
         self.check_min_detected_photons_filter()
