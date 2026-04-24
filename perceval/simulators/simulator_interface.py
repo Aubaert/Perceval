@@ -93,8 +93,7 @@ class ISimulator(ABC):
         """
         if min_detected_photons_filter is not None:
             self.set_min_detected_photons_filter(min_detected_photons_filter)
-        if postselect is not None:
-            self._postselect = postselect
+        self._postselect = postselect or PostSelect()
         if heralds is not None:
             self.set_heralds(heralds)
 
@@ -122,7 +121,7 @@ class ISimulator(ABC):
         """
         self._compute_physical_logical_perf = value
 
-    def format_results(self, results: dict(), physical_perf: float, logical_perf: float):
+    def format_results(self, results: dict, physical_perf: float, logical_perf: float):
         """
             Format the simulation results by computing the global performance, and returning the physical and
             logical performances only if needed.

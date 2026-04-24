@@ -32,10 +32,10 @@ from perceval.utils import FockState, BSDistribution, StateVector, NoisyFockStat
 from perceval.components import (ACircuit, AFFConfigurator, FFCircuitProvider, Experiment, IDetector,
                                  DetectionType, AComponent, Circuit, Barrier, FFConfigurator)
 
-from ._abstract_backends import AStrongSimulationBackend, IFFBackend
+from ._abstract_backends import AStrongSimulationBackend, IFFBackend, ExqaliburBackendWrapper
 
 
-class SLAPBackend(AStrongSimulationBackend, IFFBackend):
+class SLAPBackend(AStrongSimulationBackend, IFFBackend, ExqaliburBackendWrapper):
 
     def __init__(self, mask=None):
         super().__init__()
@@ -64,11 +64,15 @@ class SLAPBackend(AStrongSimulationBackend, IFFBackend):
         self._slap.set_input_state(self._input_state)
         return self._slap.distribution()
 
+    def all_prob_ampli(self) -> list[complex]:
+        self._slap.set_input_state(self._input_state)
+        return self._slap.all_amplitudes()
+
     @property
     def name(self) -> str:
         return "SLAP"
 
-    def all_prob(self, input_state: FockState = None):
+    def all_prob(self, input_state: FockState = None) -> list[float]:
         self._slap.set_input_state(input_state or self._input_state)
         return self._slap.all_probabilities()
 
@@ -181,3 +185,6 @@ class SLAPBackend(AStrongSimulationBackend, IFFBackend):
         self.set_circuit(main_unitary)
         for mp in maps:
             self._slap.add_feed_forward_config(mp)
+
+    def get_exqalibur_backend(self):
+        return self._slap

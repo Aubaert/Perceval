@@ -94,7 +94,7 @@ class Experiment:
     def _reset_circuit(self):
         self._in_ports: dict = {}
         self._out_ports: dict = {}
-        self._postselect: PostSelect | None = None
+        self._postselect: PostSelect = PostSelect()
 
         self._is_unitary: bool = True
         self._has_td: bool = False
@@ -199,23 +199,26 @@ class Experiment:
     def post_select_fn(self):
         return self._postselect
 
-    def set_postselection(self, postselect: PostSelect):
+    def set_postselection(self, postselect: PostSelect | str):
         r"""
         Set a logical post-selection function. Along with the heralded modes, this function has an impact
         on the logical performance of the processor holding this experiment
 
-        :param postselect: Sets a post-selection function. Its signature must be `func(s: BasicState) -> bool`.
-            If None is passed as parameter, removes the previously defined post-selection function.
+        :param postselect: Sets a post-selection function.
         """
+        if isinstance(postselect, str):
+            postselect = PostSelect(postselect)
+
         if not isinstance(postselect, PostSelect):
             raise TypeError("Parameter must be a PostSelect object")
+
         self._circuit_changed()
         self._postselect = postselect
 
     def clear_postselection(self):
-        if self._postselect is not None:
+        if self._postselect != PostSelect():
             self._circuit_changed()
-            self._postselect = None
+            self._postselect = PostSelect()
 
     def __deepcopy__(self, memo):
         if id(self) in memo:
@@ -368,11 +371,10 @@ class Experiment:
         return self._detectors
 
     def _validate_postselect_composition(self, mode_mapping: dict):
-        if self._postselect is not None and isinstance(self._postselect, PostSelect):
-            impacted_modes = list(mode_mapping.keys())
-            # can_compose_with can take a bit of time so leave this test as an assert which can be removed by -O
-            assert self._postselect.can_compose_with(impacted_modes), \
-                f"Post-selection conditions cannot compose with modes {impacted_modes}"
+        impacted_modes = list(mode_mapping.keys())
+        # can_compose_with can take a bit of time so leave this test as an assert which can be removed by -O
+        assert self._postselect.can_compose_with(impacted_modes), \
+            f"Post-selection conditions cannot compose with modes {impacted_modes}"
 
     def _validate_new_parameters(self, new_params: dict[str, Parameter]):
         self_params = self.get_circuit_parameters()
@@ -433,6 +435,7 @@ class Experiment:
         # Add PERM, component, (PERM^-1 if is_symmetrical)
         perm_modes, perm_component = connector.generate_permutation(mode_mapping)
         new_components = []
+        out_mode_type = self._out_mode_type  # Store for later use
         if perm_component is not None:
             get_logger().debug(
                 f"  Add {perm_component.perm_vector} permutation before experiment compose", channel.general)
@@ -476,6 +479,10 @@ class Experiment:
                         self.add_port(port_mode, port, PortLocation.OUTPUT)
 
         new_components = simplify(new_components, self.circuit_size)
+        for component in new_components:
+            for m in component[0]:
+                if m < len(out_mode_type) and out_mode_type[m] == ModeType.CLASSICAL:
+                    raise UnavailableModeException(m, "Can't add components on classical modes")
         self._components += new_components
 
         # Retrieve ports from the other experiment
@@ -503,26 +510,25 @@ class Experiment:
             for m in range(experiment.circuit_size):
                 # The heralded modes detectors have already been added at the bottom modes
                 d = experiment.detectors[m]
+                new_mode = list(mode_mapping.keys())[list(mode_mapping.values()).index(m)]
                 if m not in experiment.heralds and d is not None:
-                    new_mode = list(mode_mapping.keys())[list(mode_mapping.values()).index(m)]
                     self._detectors[new_mode] = d
+                self._out_mode_type[new_mode] = experiment._out_mode_type[m]
 
         if self._postselect is not None and perm_component is not None and not is_symmetrical:
             c_first = perm_modes[0]
             self._postselect.apply_permutation(perm_component.perm_vector, c_first)
 
         # Retrieve post process function from the other experiment
-        if experiment._postselect is not None:
-            c_first = perm_modes[0]
-            other_postselect = copy.copy(experiment._postselect)
-            if perm_component is not None and is_symmetrical:
-                other_postselect.apply_permutation(perm_inv.perm_vector, c_first)
-            other_postselect.shift_modes(c_first)
-            if not (self._postselect is None or other_postselect is None
-                    or self._postselect.is_independent_with(other_postselect)):
-                raise RuntimeError("Cannot automatically compose experiment's post-selection conditions")
-            self._postselect = self._postselect or PostSelect()
+        c_first = perm_modes[0]
+        other_postselect = copy.copy(experiment._postselect)
+        if perm_component is not None and is_symmetrical:
+            other_postselect.apply_permutation(perm_inv.perm_vector, c_first)
+        other_postselect.shift_modes(c_first)
+        if self._postselect.is_independent_with(other_postselect):
             self._postselect.merge(other_postselect)
+        else:
+            raise RuntimeError("Cannot automatically compose experiment's post-selection conditions")
 
     def _add_component(self, mode_mapping, component, keep_port: bool):
         self._validate_postselect_composition(mode_mapping)
@@ -537,6 +543,9 @@ class Experiment:
 
         perm_modes, perm_component = ModeConnector.generate_permutation(mode_mapping)
         if perm_component is not None:
+            for m in perm_modes:
+                if self._out_mode_type[m] == ModeType.CLASSICAL:
+                    raise UnavailableModeException(m, "Can't add permutations on classical modes")
             self._components.append((perm_modes, perm_component))
 
         sorted_modes = tuple(range(min(mode_mapping), min(mode_mapping) + component.m))

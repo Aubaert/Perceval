@@ -109,11 +109,17 @@ class Simulator(ISimulator):
     def logical_perf(self):
         return self._logical_perf
 
-    def set_postselection(self, postselect: PostSelect):
+    def set_postselection(self, postselect: PostSelect | str):
         """Set a post-selection function
 
-        :param postselect: a PostSelect object
+        :param postselect: a PostSelect object or a string describing it
         """
+        if isinstance(postselect, str):
+            postselect = PostSelect(postselect)
+
+        if not isinstance(postselect, PostSelect):
+            raise TypeError("param must be a PostSelect object")
+
         self._postselect = postselect
 
     def clear_postselection(self):
@@ -655,8 +661,8 @@ class Simulator(ISimulator):
         for i in range(self._backend._circuit.m):
             if i in self._heralds and i not in self._no_mask_heralded_modes:
                 herald_expectation = self._heralds[i]
-                if herald_expectation > 32:  # FsMask limitation
-                    raise ValueError("Cannot simulate an herald expecting more than 32 detected photons")
+                if herald_expectation >= 32:  # FsMask limitation
+                    raise ValueError("Cannot simulate an herald expecting more than 31 detected photons")
                 # Encodes expected photon count from 0x30 to 0x4F ASCII characters
                 mask_str += f"{chr(0x30 + herald_expectation)}"
             else:

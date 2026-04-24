@@ -135,6 +135,8 @@ class AStrongSimulationBackend(ABackend):
                 self._mask = xq.FSMask(instate.m, self._mask_n or instate.n, self._masks_str, self._no_limit_modes)
             else:
                 self._mask = xq.FSMask(instate.m, self._mask_n or instate.n, self._masks_str)
+        else:
+            self._mask = None
 
     def clear_mask(self):
         """
@@ -232,4 +234,11 @@ class IFFBackend(ABC):
         :param components: The list of components in the circuit, containing at least one FFConfigurator.
         :param m: The number of modes in the circuit.
         """
+        pass
+
+
+class ExqaliburBackendWrapper(ABC):
+
+    @abstractmethod
+    def get_exqalibur_backend(self):
         pass
