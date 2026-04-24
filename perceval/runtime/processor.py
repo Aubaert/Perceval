@@ -30,7 +30,8 @@ import sys
 
 from multipledispatch import dispatch
 
-from perceval.utils import SVDistribution, BasicState, FockState, AnnotatedFockState, StateVector, NoiseModel, ProcessorType
+from perceval.utils import (SVDistribution, BasicState, FockState, AnnotatedFockState, StateVector, NoiseModel,
+                            ProcessorType, CoherentState)
 from perceval.utils.logging import get_logger, channel
 
 from perceval.runtime.abstract_processor import AProcessor
