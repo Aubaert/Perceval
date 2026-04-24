@@ -28,9 +28,25 @@
 # SOFTWARE.
 
 import pytest
+from exqalibur import StateVector, FockState
 
 from perceval import BS, Processor, SLOSBackend, Simulator
 from perceval.utils.coherent_state import CoherentState
+
+
+def to_state_vector(coherent_state: CoherentState) -> StateVector:
+    res = StateVector()
+    fs_list = [0] * coherent_state.m
+    for m, ampli in enumerate(coherent_state):
+        if ampli:
+            fs_list[m] = 1
+            res += ampli * FockState(fs_list)
+            fs_list[m] = 0
+
+    if not len(res):
+        res += FockState(fs_list)
+
+    return res
 
 
 def test_empty_state():
@@ -38,13 +54,9 @@ def test_empty_state():
     empty = CoherentState()
 
     assert empty.m == 0
-    assert empty.n == 0
     assert str(empty) == "|>"
 
     assert empty == CoherentState()
-
-    assert not empty.has_annotations
-    assert not empty.has_polarization
 
 def test_coherent_state():
 
@@ -52,7 +64,6 @@ def test_coherent_state():
 
     assert str(state) == "|1+0j, 2+3.4j>"
     assert state.m == 2
-    assert state.n == 1
 
     other = CoherentState([3.1, 0.2])
 
@@ -60,33 +71,26 @@ def test_coherent_state():
 
     assert state * other == CoherentState([1, 2+3.4j, 3.1, 0.2])
 
-    small_state = CoherentState([1.1j])
-
-    assert state.set_slice(small_state, 0, 1) == CoherentState([1.1j, 2+3.4j])
-    assert state.set_slice(small_state, 1, 2) == CoherentState([1, 1.1j])
-
     assert len(state) == state.m
-
     assert state ** 2 == CoherentState([1, 2+3.4j, 1, 2+3.4j])
 
-    assert state.remove_modes([1]) == CoherentState([1])
-
-    assert state.to_power() == [1, 4 + 3.4 ** 2]
+    assert state.get_power() == [1, 4 + 3.4 ** 2]
 
 def test_simulation():
     state = CoherentState([1-0.4j, 2+3.4j])
 
-    tot_power = sum(state.to_power())
+    tot_power = sum(state.get_power())
 
     p = Processor("SLOS", BS())
     p.with_input(state)
 
     res_coherent = p.probs()["results"]
 
-    assert pytest.approx(sum(res_coherent.to_power())) == tot_power
+    # Check power is conserved
+    assert pytest.approx(sum(res_coherent.get_power())) == tot_power
 
     # Now compare with a StateVector simulation
-    sv = state.to_state_vector()
+    sv = to_state_vector(state)
 
     backend = SLOSBackend()
     simulator = Simulator(backend)

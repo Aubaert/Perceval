@@ -31,16 +31,12 @@ from __future__ import annotations  # 3.11: replace with Self
 from numbers import Number
 from typing import Iterable
 
-from exqalibur import StateVector, FockState
-
-
 class CoherentState:
     """
-    This class describes a coherent state, which corresponds to a laser inputted into one or several modes.
+    This class describes a coherent state, which corresponds to a laser input into one or several modes.
 
     The power of the laser on one mode is abs(state[m]) ** 2.
-    Its relative phase for each mode is given by the complex phase of the amplitude,
-    and represents the time phase of the electromagnetic field.
+    Its relative phase for each mode is given by the complex phase of the amplitude
     """
 
     def __init__(self, amplitudes: Iterable[Number] = None):
@@ -58,10 +54,6 @@ class CoherentState:
         :return: The number of modes
         """
         return len(self._amplitudes)
-
-    @property
-    def n(self) -> int:
-        return 1 if self.m > 0 and any(ampli for ampli in self) else 0
 
     def __len__(self) -> int:
         return len(self._amplitudes)
@@ -88,53 +80,8 @@ class CoherentState:
         assert self.m == other.m, f"Inconsistent number of modes (received {self.m} and {other.m})."
         return CoherentState(self_ampli + other_ampli for self_ampli, other_ampli in zip(self, other))
 
-    @property
-    def has_polarization(self) -> bool:
-        return False
-
-    @property
-    def has_annotations(self) -> bool:
-        return False
-
-    def remove_modes(self, modes: list[int]) -> CoherentState:
-        """
-        :param modes: The list of modes to remove.
-        :return: A new state with only the modes that are not in ``modes``
-        """
-        return CoherentState(ampli for m, ampli in enumerate(self) if m not in modes)
-
-    def set_slice(self, other: CoherentState, start: int, end: int) -> CoherentState:
-        """
-        :param other: The state to replace part of ``self`` with. Must have :math:`end - start` modes
-        :param start: The first mode to replace.
-        :param end: The last mode to replace (excluded).
-        :return: A new state where the section between start and end is ``other``, and the remaining comes from ``self``.
-        """
-        assert other.m == end - start, f"Incorrect number of modes (received {other.m}, expected {end - start})."
-        assert end <= self.m, "Can't replace modes beyond the number of modes of this state"
-        assert start >= 0, "Can't replace negative modes"
-
-        return CoherentState(self[m] if m < start or m >= end else other[m - start] for m in range(self.m))
-
-    def to_power(self) -> list[float]:
+    def get_power(self) -> list[float]:
         """
         :return: A list of the measurable per-mode power (in the unit used to define the state initially)
         """
         return list(ampli.imag ** 2 + ampli.real ** 2 for ampli in self)
-
-    def to_state_vector(self) -> StateVector:
-        """
-        :return: An equivalent state vector composed of superposed 1-photon states
-        """
-        res = StateVector()
-        fs_list = [0] * self.m
-        for m, ampli in enumerate(self):
-            if ampli:
-                fs_list[m] = 1
-                res += ampli * FockState(fs_list)
-                fs_list[m] = 0
-
-        if not len(res):
-            res += FockState(fs_list)
-
-        return res

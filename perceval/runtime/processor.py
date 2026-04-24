@@ -28,6 +28,8 @@
 # SOFTWARE.
 import sys
 
+from multipledispatch import dispatch
+
 from perceval.utils import SVDistribution, BasicState, FockState, AnnotatedFockState, StateVector, NoiseModel, CoherentState
 from perceval.utils.logging import get_logger, channel
 
@@ -158,12 +160,16 @@ class Processor(AProcessor):
         """
         return self.experiment.unitary_circuit(flatten=flatten, use_phase_noise=True)
 
-    def samples(self, max_samples: int, max_shots: int = None, progress_callback=None) -> dict:
+    @dispatch(CoherentState, object, object, object)
+    def _samples(self, input_state: CoherentState, max_samples: int, max_shots: int | None, progress_callback):
+        raise ValueError( "A CoherentState can't be used for sampling")
+
+    @dispatch(object, object, object, object)
+    def _samples(self, input_state, max_samples: int, max_shots: int | None, progress_callback):
         self.check_min_detected_photons_filter()
         from perceval.simulators import NoisySamplingSimulator
         from perceval.backends import ASamplingBackend
         assert isinstance(self.backend, ASamplingBackend), "A sampling backend is required to call samples method"
-        assert not isinstance(self.input_state, CoherentState), "A CoherentState can't be used for sampling"
         sampling_simulator = NoisySamplingSimulator(self.backend)
         sampling_simulator.sleep_between_batches = 0  # Remove sleep time between batches of samples in local simulation
         sampling_simulator.set_circuit(self.linear_circuit())
@@ -177,10 +183,24 @@ class Processor(AProcessor):
         self.log_resources(sys._getframe().f_code.co_name, {'max_samples': max_samples, 'max_shots': max_shots})
         get_logger().info(
             f"Start a local {'perfect' if self._source.is_perfect() else 'noisy'} sampling", channel.general)
-        sample_provider = self.source_distribution if self._has_custom_input else (self._source, self.input_state)
+        sample_provider = self.source_distribution if self._has_custom_input else (self._source, input_state)
         res = sampling_simulator.samples(sample_provider, max_samples, max_shots, progress_callback)
         get_logger().info("Local sampling complete!", channel.general)
         return res
+
+    def samples(self, max_samples: int, max_shots: int = None, progress_callback=None) -> dict:
+        return self._samples(self.input_state, max_samples, max_shots, progress_callback)
+
+    @dispatch(object, object)
+    def _probs(self, input_state, progress_callback: callable):
+        self._simulator.keep_heralds(False)
+        self._simulator.compute_physical_logical_perf(self._compute_physical_logical_perf)
+        svd = self.source_distribution if self._has_custom_input else (self._source, input_state)
+        return self._simulator.probs_svd(svd, self.detectors, progress_callback)
+
+    @dispatch(CoherentState, object)
+    def _probs(self, input_state: CoherentState, progress_callback: callable) -> dict:
+        return {"results": self._simulator.evolve(input_state)}
 
     def probs(self, precision: float = None, progress_callback: callable = None) -> dict:
         self.check_min_detected_photons_filter()
@@ -193,17 +213,11 @@ class Processor(AProcessor):
             self._simulator.set_circuit(self.linear_circuit() if self.experiment.is_unitary else self.components, self.circuit_size)
             self._simulator.set_min_detected_photons_filter(self._min_detected_photons_filter)
 
-        if isinstance(self.input_state, CoherentState):
-            return {"results": self._simulator.evolve(self.input_state)}
-
         if precision is not None:
             self._simulator.set_precision(precision)
         get_logger().info(f"Start a local {'perfect' if self._source.is_perfect() else 'noisy'} strong simulation",
                           channel.general)
-        self._simulator.keep_heralds(False)
-        self._simulator.compute_physical_logical_perf(self._compute_physical_logical_perf)
-        svd = self.source_distribution if self._has_custom_input else (self._source, self.input_state)
-        res = self._simulator.probs_svd(svd, self.detectors, progress_callback)
+        res = self._probs(self.input_state, progress_callback)
         get_logger().info("Local strong simulation complete!", channel.general)
 
         self.log_resources(sys._getframe().f_code.co_name, {'precision': precision})

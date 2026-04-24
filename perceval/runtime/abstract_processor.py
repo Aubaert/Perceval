@@ -334,9 +334,11 @@ class AProcessor(ABC):
         self.experiment.check_input(input_state)
 
     def check_min_detected_photons_filter(self):
+        if isinstance(self.input_state, CoherentState):
+            return
         if self._min_detected_photons_filter is None:
             if (not self.is_remote and self._source is not None and self._source.is_perfect()
-                    and isinstance(self.input_state, (BasicState, CoherentState))):
+                    and isinstance(self.input_state, BasicState)):
                 # Automatically set the min_detected_photons_filter for perfect sources of local processors if not set
                 self.min_detected_photons_filter(self.input_state.n - sum(self.heralds.values()))
             else:
