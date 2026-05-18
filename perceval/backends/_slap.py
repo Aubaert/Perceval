@@ -29,13 +29,13 @@
 import exqalibur as xq
 
 from perceval.utils import FockState, BSDistribution, StateVector, NoisyFockState, SVDistribution, Matrix
-from perceval.components import (ACircuit, AFFConfigurator, FFCircuitProvider, Experiment, IDetector, Processor,
+from perceval.components import (ACircuit, AFFConfigurator, FFCircuitProvider, Experiment, IDetector,
                                  DetectionType, AComponent, Circuit, Barrier, FFConfigurator)
 
-from ._abstract_backends import AStrongSimulationBackend, IFFBackend
+from ._abstract_backends import AStrongSimulationBackend, IFFBackend, ExqaliburBackendWrapper
 
 
-class SLAPBackend(AStrongSimulationBackend, IFFBackend):
+class SLAPBackend(AStrongSimulationBackend, IFFBackend, ExqaliburBackendWrapper):
 
     def __init__(self, mask=None):
         super().__init__()
@@ -50,36 +50,35 @@ class SLAPBackend(AStrongSimulationBackend, IFFBackend):
 
     def _init_mask(self):
         super()._init_mask()
-        if self._mask:
-            self._slap.set_mask(self._mask)
-        else:
-            self._slap.reset_mask()
+        self._slap.set_mask(self._mask)
 
     def prob_amplitude(self, output_state: FockState) -> complex:
-        istate = self._input_state
-        all_pa = self._slap.all_prob_ampli(istate)
+        self._slap.set_input_state(self._input_state)
+        all_pa = self._slap.all_amplitudes()
         if self._mask:
             return all_pa[xq.FSArray(self._input_state.m, self._input_state.n, self._mask).find(output_state)]
         else:
             return all_pa[xq.FSArray(self._input_state.m, self._input_state.n).find(output_state)]
 
     def prob_distribution(self) -> BSDistribution:
-        return self._slap.prob_distribution(self._input_state)
+        self._slap.set_input_state(self._input_state)
+        return self._slap.distribution()
+
+    def all_prob_ampli(self) -> list[complex]:
+        self._slap.set_input_state(self._input_state)
+        return self._slap.all_amplitudes()
 
     @property
     def name(self) -> str:
         return "SLAP"
 
-    def all_prob(self, input_state: FockState = None):
-        if input_state is not None:
-            self.set_input_state(input_state)
-        else:
-            input_state = self._input_state
-        return self._slap.all_prob(input_state)
+    def all_prob(self, input_state: FockState = None) -> list[float]:
+        self._slap.set_input_state(input_state or self._input_state)
+        return self._slap.all_probabilities()
 
     def evolve(self) -> StateVector:
-        istate = self._input_state
-        all_pa = self._slap.all_prob_ampli(istate)
+        self._slap.set_input_state(self._input_state)
+        all_pa = self._slap.all_amplitudes()
         res = StateVector()
         for output_state, pa in zip(self._get_iterator(self._input_state), all_pa):
             res += output_state * pa
@@ -92,8 +91,6 @@ class SLAPBackend(AStrongSimulationBackend, IFFBackend):
         #   - Detectors of measured modes are PNR,
         #   - No NoisyFockState as input (as they require merging)
         # - Configurators don't configure on modes above them, nor do they point to heralded or non-unitary experiments
-
-        from perceval import Processor, Experiment
 
         if isinstance(input_state, NoisyFockState):
             return False
@@ -109,8 +106,6 @@ class SLAPBackend(AStrongSimulationBackend, IFFBackend):
                     return False
 
         def accept(p):
-            if isinstance(p, Processor):
-                p = p.experiment
             if isinstance(p, Experiment) and (p.heralds or p.in_heralds or not p.is_unitary):
                 return False
             return True
@@ -179,8 +174,6 @@ class SLAPBackend(AStrongSimulationBackend, IFFBackend):
                 for measure, sub_c in c.circuit_map.items():
                     if isinstance(sub_c, Experiment):
                         sub_c = sub_c.unitary_circuit()
-                    elif isinstance(sub_c, Processor):
-                        sub_c = sub_c.linear_circuit()
 
                     config_map[measure] = sub_c.compute_unitary()
 
@@ -192,3 +185,6 @@ class SLAPBackend(AStrongSimulationBackend, IFFBackend):
         self.set_circuit(main_unitary)
         for mp in maps:
             self._slap.add_feed_forward_config(mp)
+
+    def get_exqalibur_backend(self):
+        return self._slap

@@ -30,8 +30,8 @@
 from .delay_simulator import DelaySimulator
 from .loss_simulator import LossSimulator
 from .polarization_simulator import PolarizationSimulator
-from .simulator import Simulator
+from .simulator import Simulator, ExqaliburSimulator
 from .simulator_factory import SimulatorFactory
 from .stepper import Stepper
-from .noisy_sampling_simulator import NoisySamplingSimulator
+from .noisy_sampling_simulator import NoisySamplingSimulator, ExqaliburNoisySamplingSimulator
 from .feed_forward_simulator import FFSimulator

@@ -122,6 +122,8 @@ At the input, they declare a number of photon in a mode that the user won't have
 >>> p.heralds_in
 {0: 1}
 
+The input heralds can be removed from a state using :code:`state = remove_in_heralded_modes(state)`.
+
 At the output, they will automatically filter states so only states matching the given number of photons will be selected.
 They also remove these modes from the resulting BasicStates.
 This filtering has an impact on the perf of the processor.
@@ -154,7 +156,7 @@ This is not the case when composing with an asymmetric processor.
 
 >>> from perceval import catalog
 >>> p = pcvl.Processor("SLOS", 4)
->>> cnot = catalog["postprocessed cnot"].build_processor()
+>>> cnot = catalog["postprocessed cnot"].build_experiment()
 >>> cnot.m
 4
 >>> cnot.circuit_size
@@ -209,6 +211,6 @@ and some performance score corresponding to the probability of getting a selecte
 >>> p.probs()["results"]
 BSDistribution(float, {|1,0>: 0.5, |0,1>: 0.5})
 
-.. autoclass:: perceval.components.processor.Processor
+.. autoclass:: perceval.runtime.processor.Processor
    :members:
    :inherited-members:

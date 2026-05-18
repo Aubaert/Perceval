@@ -112,7 +112,7 @@ class SLOSBackend(AStrongSimulationBackend):
 
     @property
     def name(self) -> str:
-        return "SLOS"
+        return "SLOS_LEGACY"
 
     def _reset(self):
         self._fsms: list[xq.FSMap] = [[]]
@@ -158,10 +158,10 @@ class SLOSBackend(AStrongSimulationBackend):
             n = input_state.n
             if n < len(self._fsms) and n not in self._fsas:
                 # we are missing the intermediate states - let us retrieve/load it back
-                current_fsa = xq.FSArray(m, n, self._mask) if self._mask else xq.FSArray(m, n)
+                current_fsa = xq.FSArray(m, n, self._mask)
             for k in range(len(self._fsms), n + 1):
                 fsa_n_m1 = current_fsa
-                current_fsa = xq.FSArray(m, k, self._mask) if self._mask else xq.FSArray(m, k)
+                current_fsa = xq.FSArray(m, k, self._mask)
                 self._mk_l.append(current_fsa.count())
                 self._fsms.append(xq.FSMap(current_fsa, fsa_n_m1, True))
             if n not in self._fsas:
@@ -192,6 +192,9 @@ class SLOSBackend(AStrongSimulationBackend):
         result = self._state_mapping[self._input_state].coefs[output_idx, 0] * math.sqrt(output_state.prodnfact() / self._input_state.prodnfact())
         return result if self._symb else complex(result)
 
+    def all_prob_ampli(self) -> list[complex]:
+        return [ v * math.sqrt(fs.prodnfact() / self._input_state.prodnfact()) for (v, fs) in zip(self._state_mapping[self._input_state].coefs, self._get_iterator(self._input_state))]
+
     def prob_distribution(self) -> BSDistribution:
         istate = self._input_state
         c = self._state_mapping[istate].coefs.reshape(self._fsas[istate.n].count())
@@ -202,7 +205,7 @@ class SLOSBackend(AStrongSimulationBackend):
             bsd.add(output_state, probability)
         return bsd
 
-    def all_prob(self, input_state: FockState = None):
+    def all_prob(self, input_state: FockState = None) -> list[float]:
         """SLOS specific signature, to enhance optimization in some computations"""
         if input_state is not None:
             self.set_input_state(input_state)

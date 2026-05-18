@@ -26,39 +26,68 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 import exqalibur as xq
-from perceval.utils import FockState
+from perceval.utils import FockState, BSDistribution, StateVector
 from perceval.components import ACircuit
-from ._abstract_backends import ASamplingBackend, ExqaliburBackendWrapper
+from perceval.utils.postselect import PostSelect
+from perceval.utils.states import BasicState
+
+from ._abstract_backends import AStrongSimulationBackend, ExqaliburBackendWrapper
 
 
-class Clifford2017Backend(ASamplingBackend, ExqaliburBackendWrapper):
-    def __init__(self):
+class SLOSExqaliburBackend(AStrongSimulationBackend, ExqaliburBackendWrapper):
+
+    def __init__(self, mask=None):
         super().__init__()
-        self._clifford = xq.Clifford2017()
+        self._slos = xq.SLOS_V3()
+        if mask:
+            self.set_mask(mask)
+        self._post_select = None
 
     def set_circuit(self, circuit: ACircuit):
         super().set_circuit(circuit)  # Computes circuit unitary as _umat
-        self._clifford.set_unitary(self._umat)
+        self._slos.set_unitary(self._umat)
 
-    def set_input_state(self, input_state: FockState):
+    def set_input_state(self, input_state: BasicState):
         super().set_input_state(input_state)
-        self._clifford.set_input_state(input_state)
+        self._slos.set_input_state(input_state)
 
-    def sample(self):
-        return self._clifford.sample()
+    def _init_mask(self):
+        super()._init_mask()
+        self._slos.set_mask(self._mask)
 
-    def samples(self, count: int):
-        """
-        Request `count` samples from the circuit given an input state.
-        Uses parallel processing, so it is much more efficient than calling `self.sample()` several times.
-        """
-        return self._clifford.samples(count)
+    def set_post_select(self, post_selection: PostSelect):
+        self._slos.set_post_select(post_selection)
+
+    def prob_amplitude(self, output_state: FockState) -> complex:
+        all_pa = self._slos.all_amplitudes()
+        idx = self._slos.get_index(output_state)
+        return all_pa[idx]
+
+    def probability(self, output_state: FockState) -> float:
+        return abs(self.prob_amplitude(output_state)) ** 2
+
+    def prob_distribution(self) -> BSDistribution:
+        return self._slos.distribution()
+
+    def all_prob_ampli(self) -> list[complex]:
+        return self._slos.all_amplitudes()
 
     @property
     def name(self) -> str:
-        return "CliffordClifford2017"
+        return "SLOS"
+
+    def all_prob(self, input_state: FockState = None) -> list[float]:
+        self._slos.set_input_state(input_state or self._input_state)
+        return self._slos.all_probabilities()
+
+    def evolve(self) -> StateVector:
+        self._slos.set_input_state(self._input_state)
+        all_pa = self._slos.all_amplitudes()
+        res = StateVector()
+        for output_state, pa in zip(self._slos.get_states(), all_pa):
+            res += output_state * pa
+        return res
 
     def get_exqalibur_backend(self):
-        return self._clifford
+        return self._slos

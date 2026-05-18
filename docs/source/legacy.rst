@@ -5,6 +5,29 @@ While, with its latest versions, Perceval tends to stabilise its public API, som
 
 This section lists the major breaking changes.
 
+Breaking changes in Perceval 1.2
+--------------------------------
+
+Processor place in the package
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :code:`AProcessor` and :code:`Processor` classes have been moved from :code:`perceval.components` to :code:`perceval.runtime`,
+so they are at the same place as the :code:`RemoteProcessor`.
+While importing from :code:`perceval.components` should still work, it is expected to be completely removed in a few versions, and now produces a warning.
+Any code importing these classes directly from the root of perceval should continue to work fine.
+
+Also, the :code:`build_processor()` method from the catalog items is now deprecated.
+The method :code:`build_experiment()` should now be used instead.
+
+Although some classes were ported to Exqalibur, their python versions can still be accessed if needed.
+No class name has been changed, so :code:`Simulator` or :code:`SLOSBackend` still points to the python version.
+The python SLOS is still available in Processors under the name :code:`"SLOS_LEGACY"`
+
+Tokens that were saved before perceval 0.13 will no longer be loaded by perceval due to previous changes to their storage.
+Loading them and saving them in a perceval 1.1 should be enough to do the transition.
+
+The new :code:`PlatformSpecs` object that is now returned by :code:`RemoteProcessor.specs` should be accessed through its attributes and no longer as a dictionary. While this remains possible, it is now deprecated.
+
 Breaking changes in Perceval 1.1
 --------------------------------
 

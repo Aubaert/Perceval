@@ -28,23 +28,15 @@
 # SOFTWARE.
 from __future__ import annotations  # Python 3.11 : Replace using Self typing
 
-import copy
 from abc import ABC, abstractmethod
-from enum import Enum
 
-from perceval.utils import BasicState, FockState, Parameter, PostSelect, LogicalState, NoiseModel, SVDistribution, StateVector
-from perceval.utils.logging import get_logger, channel
-from .abstract_component import AComponent
-from .detector import DetectionType
-from .experiment import Experiment
-from .linear_circuit import Circuit, ACircuit
-from .port import PortLocation, APort
-
-
-class ProcessorType(Enum):
-    SIMULATOR = 1
-    PHYSICAL = 2
-
+from .platform_specs import PlatformSpecs
+from perceval.utils import BasicState, FockState, Parameter, PostSelect, LogicalState, NoiseModel, SVDistribution, StateVector, ProcessorType
+from perceval.components.abstract_component import AComponent
+from perceval.components.detector import DetectionType
+from perceval.components.experiment import Experiment
+from perceval.components.linear_circuit import Circuit, ACircuit
+from perceval.components.port import PortLocation, APort
 
 class AProcessor(ABC):
     def __init__(self, experiment = None):
@@ -61,6 +53,9 @@ class AProcessor(ABC):
         experiment.add_observers(self._circuit_change_observer,
                                  self._noise_changed_observer,
                                  self._input_changed_observer)
+        self._noise_changed_observer()
+        self._circuit_change_observer()
+        self._input_changed_observer()
 
     @abstractmethod
     def _circuit_change_observer(self, new_component = None):
@@ -92,8 +87,8 @@ class AProcessor(ABC):
         pass
 
     @property
-    def specs(self):
-        return dict()
+    def specs(self) -> PlatformSpecs:
+        return PlatformSpecs()
 
     def set_parameters(self, params: dict[str, any]):
         for key, value in params.items():
@@ -151,17 +146,21 @@ class AProcessor(ABC):
             s = s.remove_modes(list(self.heralds.keys()))
         return s
 
+    def remove_in_heralded_modes(self, s: FockState) -> FockState:
+        if self.in_heralds:
+            s = s.remove_modes(list(self.in_heralds.keys()))
+        return s
+
     @property
     def post_select_fn(self):
         return self.experiment.post_select_fn
 
-    def set_postselection(self, postselect: PostSelect):
+    def set_postselection(self, postselect: PostSelect | str):
         r"""
         Set a logical post-selection function. Along with the heralded modes, this function has an impact
         on the logical performance of the processor
 
-        :param postselect: Sets a post-selection function. Its signature must be `func(s: BasicState) -> bool`.
-            If None is passed as parameter, removes the previously defined post-selection function.
+        :param postselect: Sets a post-selection function.
         """
         self.experiment.set_postselection(postselect)
 
@@ -180,9 +179,7 @@ class AProcessor(ABC):
         for m, v in self.heralds.items():
             if state[m] != v:
                 return False
-        if self.experiment.post_select_fn is not None:
-            return self.experiment.post_select_fn(state)
-        return True
+        return self.experiment.post_select_fn(state)
 
     def set_circuit(self, circuit: ACircuit) -> AProcessor:
         r"""

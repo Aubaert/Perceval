@@ -29,12 +29,13 @@
 import copy
 from typing import Any
 
-from perceval.components import Processor, AComponent, Barrier, PERM, IDetector, Herald, PortLocation, Source, Experiment
+from perceval.components import AComponent, Barrier, PERM, IDetector, Herald, PortLocation, Source, Experiment
 from perceval.utils import (NoiseModel, BasicState, FockState, BSDistribution, SVDistribution, StateVector,
                             partial_progress_callable, get_logger, deprecated)
 from perceval.utils.logging import channel
 from perceval.components.feed_forward_configurator import AFFConfigurator
 from perceval.backends import AStrongSimulationBackend, IFFBackend
+from perceval.runtime import Processor
 
 from .simulator_interface import ISimulator
 
@@ -213,7 +214,7 @@ class FFSimulator(ISimulator):
 
     def _get_sim_params(self,
                        input_state: SVDistribution | tuple[Source, BasicState],
-                       components: list[tuple[tuple, AComponent | Processor]],
+                       components: list[tuple[tuple, AComponent | Processor | Experiment]],
                        m: int,
                        detectors: list[IDetector] = None,
                        filter_states: bool = False,
@@ -260,11 +261,8 @@ class FFSimulator(ISimulator):
                     proc.add_port(r, Herald(v), PortLocation.OUTPUT)
 
             if self._postselect.has_condition:
-                if proc.post_select_fn is not None:
-                    postselect = copy.copy(self._postselect)
-                    postselect.merge(proc.post_select_fn)
-                else:
-                    postselect = self._postselect
+                postselect = copy.copy(self._postselect)
+                postselect.merge(proc.post_select_fn)
                 proc.set_postselection(postselect)
 
             # We need to retrieve the new heralds as they are actually counting user photons
