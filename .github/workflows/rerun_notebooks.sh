@@ -10,9 +10,6 @@ run_notebook () {
 # apply patch to notebooks which allows execution
 SCRIPT_DIR=$(dirname "$(realpath $0)")
 GIT_ROOT_DIR=$(git rev-parse --show-toplevel)
-echo SCRIPT_DIR: ${SCRIPT_DIR}
-echo GIT_ROOT_DIR: ${GIT_ROOT_DIR}
-echo ENABLE_CLOUD_NOTEBOOKS: ${ENABLE_CLOUD_NOTEBOOKS}
 (cd $GIT_ROOT_DIR && git apply "$SCRIPT_DIR/notebooks.patch")
 
 nb_dir="docs/source/notebooks"

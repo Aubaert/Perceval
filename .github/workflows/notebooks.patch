@@ -1,5 +1,5 @@
---- docs/source/notebooks/BS-based_implementation.ipynb
-+++ docs/source/notebooks/BS-based_implementation.ipynb
+--- a/docs/source/notebooks/BS-based_implementation.ipynb
++++ b/docs/source/notebooks/BS-based_implementation.ipynb
 @@ -85,13 +85,13 @@
     "metadata": {},
     "outputs": [],
@@ -18,8 +18,8 @@
      "logfilebs=f'bsbasednotebook-opt-{N}.log'\n",
      "logfilemzi=f'mzibasednotebook-opt-{N}.log'"
     ]
---- docs/source/notebooks/Boson_sampling.ipynb
-+++ docs/source/notebooks/Boson_sampling.ipynb
+--- a/docs/source/notebooks/Boson_sampling.ipynb
++++ b/docs/source/notebooks/Boson_sampling.ipynb
 @@ -54,9 +54,9 @@
     "metadata": {},
     "outputs": [],
@@ -33,8 +33,8 @@
     ]
    },
    {
---- docs/source/notebooks/Gedik_qudit.ipynb
-+++ docs/source/notebooks/Gedik_qudit.ipynb
+--- a/docs/source/notebooks/Gedik_qudit.ipynb
++++ b/docs/source/notebooks/Gedik_qudit.ipynb
 @@ -48,6 +48,7 @@
     "outputs": [],
     "source": [
@@ -54,8 +54,8 @@
      "pcvl.RemoteConfig().save()\n",
      "\n",
      "remote_pr = pcvl.RemoteProcessor(\"sim:belenos\")"
---- docs/source/notebooks/Remote_Computation_Tutorial.ipynb
-+++ docs/source/notebooks/Remote_Computation_Tutorial.ipynb
+--- a/docs/source/notebooks/Remote_Computation_Tutorial.ipynb
++++ b/docs/source/notebooks/Remote_Computation_Tutorial.ipynb
 @@ -37,6 +37,7 @@
     "source": [
      "import time\n",
