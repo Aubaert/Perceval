@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e # exit on first error
+
 run_notebook () {
     echo converting $notebook
     jupyter nbconvert --clear-output --inplace "$notebook"
@@ -22,10 +24,10 @@ for entry in `ls $nb_dir | grep \.ipynb`; do
             run_notebook
         elif [ "$notebook" = "docs/source/notebooks/Gedik_qudit.ipynb" ]
         then
-            echo $notebook is ignore
+            echo "  Skip $notebook"
         elif [ "$notebook" = "docs/source/notebooks/Remote_Computation_Tutorial.ipynb" ]
         then
-            echo $notebook is ignore
+            echo "  Skip $notebook"
         else
             run_notebook
         fi
