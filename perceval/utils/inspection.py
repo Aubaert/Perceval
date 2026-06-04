@@ -27,47 +27,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import math
+from inspect import signature
+from typing import Callable
 
-from flaky import flaky
-import pytest
 
-from perceval.backends import ASamplingBackend, BackendFactory
-from perceval.components import catalog
-from perceval.utils import BasicState
+def has_kwargs(func: Callable):
+    """Check if a function can be called with any number of keyword arguments (i.e. has **kwargs)"""
+    sig = signature(func)
+    parameters = list(sig.parameters.values())
 
-@flaky(max_runs=3)
-@pytest.mark.long_test
-@pytest.mark.parametrize("backend_name", ["CliffordClifford2017", "SamplingStepper"])
-def test_backend_cnot(backend_name):
-    # Two last modes are ancillaries
-    s00 = BasicState([1, 0, 1, 0, 0, 0])
-    s01 = BasicState([1, 0, 0, 1, 0, 0])
-    s10 = BasicState([0, 1, 1, 0, 0, 0])
-    s11 = BasicState([0, 1, 0, 1, 0, 0])
+    for param in parameters:
+        if param.kind == param.VAR_KEYWORD:
+            return True
 
-    expected = [
-        [ s00, s00 ],
-        [ s01, s01 ],
-        [ s10, s11 ],
-        [ s11, s10 ],
-    ]
-    backend: ASamplingBackend = BackendFactory.get_backend(backend_name)
-    cnot = catalog["postprocessed cnot"].build_circuit()
-    backend.set_circuit(cnot)
-
-    N = 1000
-    for input, output in expected:
-        backend.set_input_state(input)
-        unknown = set()
-        correct = 0
-        for _ in range(N):
-            bs = backend.sample()
-            if bs == output:
-                correct += 1
-            elif bs[4] or bs[5] or bs[0] + bs[1] != 0 or bs[2] + bs[3] != 0:
-                pass # post-processed
-            else:
-                unknown.add(bs)
-        assert len(unknown) == 0
-        assert correct/N == pytest.approx(1/9, abs = 2.5758 * math.sqrt(8/81 / N)), "correct sample proportion out of 99% confidence interval"
+    return False

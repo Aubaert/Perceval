@@ -27,47 +27,39 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import math
+from typing import Any
 
-from flaky import flaky
-import pytest
+from perceval.components import Experiment
+from .command import Command
 
-from perceval.backends import ASamplingBackend, BackendFactory
-from perceval.components import catalog
-from perceval.utils import BasicState
 
-@flaky(max_runs=3)
-@pytest.mark.long_test
-@pytest.mark.parametrize("backend_name", ["CliffordClifford2017", "SamplingStepper"])
-def test_backend_cnot(backend_name):
-    # Two last modes are ancillaries
-    s00 = BasicState([1, 0, 1, 0, 0, 0])
-    s01 = BasicState([1, 0, 0, 1, 0, 0])
-    s10 = BasicState([0, 1, 1, 0, 0, 0])
-    s11 = BasicState([0, 1, 0, 1, 0, 0])
+class Computation:
 
-    expected = [
-        [ s00, s00 ],
-        [ s01, s01 ],
-        [ s10, s11 ],
-        [ s11, s10 ],
-    ]
-    backend: ASamplingBackend = BackendFactory.get_backend(backend_name)
-    cnot = catalog["postprocessed cnot"].build_circuit()
-    backend.set_circuit(cnot)
+    def __init__(self, command: Command, experiment: Experiment):
+        """
+        Descriptor of what we want to compute.
+        This is meant to be fully independent of how we will get the results for it
 
-    N = 1000
-    for input, output in expected:
-        backend.set_input_state(input)
-        unknown = set()
-        correct = 0
-        for _ in range(N):
-            bs = backend.sample()
-            if bs == output:
-                correct += 1
-            elif bs[4] or bs[5] or bs[0] + bs[1] != 0 or bs[2] + bs[3] != 0:
-                pass # post-processed
-            else:
-                unknown.add(bs)
-        assert len(unknown) == 0
-        assert correct/N == pytest.approx(1/9, abs = 2.5758 * math.sqrt(8/81 / N)), "correct sample proportion out of 99% confidence interval"
+        :param command: A command to do, describing what kind of results we want and the allowed parameters
+        :param experiment: The Experiment we want to compute results for
+        """
+        self.command = command
+        self.experiment = experiment
+        self.parameters: dict[str, Any] = dict()
+
+    def add_params(self, *args, **kwargs) -> None:
+        """
+        Adds or replace parameters with the given values, following the signature given by the command
+
+        :param args: The user given positional arguments
+        :param kwargs: The user given keyword arguments
+        """
+        self.parameters |= self.command.fill(*args, **kwargs)
+
+    def validate(self):
+        """
+        Checks that all non-optional parameters are filled
+
+        :raises ValueError: if parameters are not correct
+        """
+        self.command.check(self.parameters)

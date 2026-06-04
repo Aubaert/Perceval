@@ -39,3 +39,6 @@ from .remote_config import RemoteConfig
 from .job_group import JobGroup
 from .check_cancel import cancel_requested
 from .payload_generator import PayloadGenerator
+from .computation import Computation
+from .command import Command, CommandFactory
+from .error_mitigation import *
