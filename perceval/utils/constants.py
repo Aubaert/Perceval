@@ -1,3 +1,5 @@
+
+
 # MIT License
 #
 # Copyright (c) 2022 Quandela
@@ -26,23 +28,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import Callable, Any, TypeAlias
 
-ProgressCallback: TypeAlias = Callable[[float, str], None | dict | bool]
+# Parameters
+KEY_MAX_SHOTS = "max_shots"
+KEY_MAX_SAMPLES = "max_samples"
 
-
-def partial_progress_callable(progress_cb: Callable[[float, str], Any] | None,
-                              min_val: float = 0.,
-                              max_val: float = 1.) -> Callable[[float, str], Any] | None:
-    """
-    Takes a progress cb and returns another progress_cb that calls the original one with linearly modified value,
-     so that evaluating it at 0 evaluates the original one at min_val,
-     and evaluating it at 1 evaluates the original one at max_val
-    """
-    if progress_cb:
-        def partial_progress_cb(progress: float, message: str):
-            prog = max_val * progress + min_val * (1 - progress)
-            return progress_cb(prog, message)
-
-        return partial_progress_cb
-    return None
+# Results keys
+KEY_SHOTS_USED = "nb_shots_used"
+KEY_RESULTS_LIST = "results_list"
+KEY_ITERATION = "iteration"
