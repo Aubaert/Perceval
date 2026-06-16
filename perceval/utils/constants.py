@@ -27,51 +27,43 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import pytest
+# Parameters
+KEY_MAX_SHOTS = "max_shots"
+KEY_MAX_SAMPLES = "max_samples"
 
-from perceval import Command
+# Results keys
+KEY_RESULTS = "results"
+KEY_SHOTS_USED = "nb_shots_used"
+KEY_RESULTS_LIST = "results_list"
+KEY_ITERATION = "iteration"
 
+# Result legacy keys
+KEY_JOB_CONTEXT = "job_context"
+KEY_RESULT_MAPPING = "result_mapping"
+KEY_MAPPING_PARAMETERS = "mapping_delta_parameters"
 
-def test_fill():
-    signature = [("float", float, True), ("list", list, False)]
+# Payload keys
+KEY_COMPUTATION = "computation"
+KEY_MITIGATIONS = "mitigations"
+KEY_PARAMETERS = "parameters"
+KEY_NOISE = "noise"
 
-    command = Command("test", signature)
+# Payload legacy keys
+KEY_COMMAND = "command"
+KEY_ITERATOR = "iterator"
+KEY_CIRCUIT = "circuit"
+KEY_CIRCUIT_PARAMS = "circuit_params"
+KEY_INPUT_STATE = "input_state"
+KEY_COUNT = "count"
+KEY_EXPERIMENT = "experiment"
+KEY_POSTSELECT = "postselect"
+KEY_HERALDS = "heralds"
+KEY_MIN_DETECTED_PHOTONS = "min_detected_photons"
 
-    assert command.fill(1.2, [3.14]) == {"float": 1.2, "list": [3.14]}
-    assert command.fill(1.2, list=[3.14]) == {"float": 1.2, "list": [3.14]}
-    assert command.fill(float=1.2, list=[3.14]) == {"float": 1.2, "list": [3.14]}
-
-    assert command.fill(list=[3.14]) == {"list": [3.14]}
-    assert command.fill(1.2) == {"float": 1.2}
-
-    assert command.fill() == {}
-
-    with pytest.raises(TypeError):
-        command.fill([3.14])  # Incorrect argument type
-
-    with pytest.raises(TypeError):
-        command.fill(1.2, 3.14)  # Incorrect argument type
-
-    with pytest.raises(TypeError):
-        command.fill(list=3.14)  # Incorrect argument type
-
-    with pytest.raises(TypeError):
-        command.fill(1.2, float=3.14)  # Same argument given twice
-
-    with pytest.raises(TypeError):
-        command.fill(1.2, [3.14], 42)  # Too many arguments
-
-    with pytest.raises(TypeError):
-        command.fill(unknown=3.14)  # Unknown argument
-
-
-def test_validate():
-    signature = [("mandatory", float, True), ("optional", list, False)]
-
-    command = Command("test", signature)
-
-    command.check({"mandatory": 1.2, "optional": [3.14]})
-    command.check({"mandatory": 1.2})
-
-    with pytest.raises(ValueError):
-        command.check({"optional": [3.14]})  # Missing mandatory
+# Global data keys
+KEY_VERSION = "pcvl_version"
+KEY_PROCESS_ID = "process_id"
+KEY_PAYLOAD = "payload"
+KEY_PLATFORM_NAME = "platform_name"
+KEY_JOB_NAME = "job_name"
+KEY_JOB_GROUP_NAME = "job_group_name"

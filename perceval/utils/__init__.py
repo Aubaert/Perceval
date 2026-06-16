@@ -32,8 +32,9 @@ from .format import simple_float, simple_complex, format_parameters
 from .parameter import Parameter, P, Expression, E
 from .mlstr import mlstr
 from .states import BasicState, FockState, NoisyFockState, AnnotatedFockState, Annotation, StateVector, SVDistribution,\
-    BSDistribution, BSCount, BSSamples, allstate_array, allstate_iterator, anonymize_annotations,\
+    BSCount, BSSamples, allstate_array, allstate_iterator, anonymize_annotations,\
     max_photon_state_iterator, filter_distribution_photon_count
+from .bsdistribution import BSDistribution
 from .logical_state import LogicalState, generate_all_logical_states
 from .polarization import Polarization, convert_polarized_state, build_spatial_output_states
 from .postselect import PostSelect, post_select_distribution, post_select_statevector, apply_post_select
@@ -47,7 +48,9 @@ from ._enums import Encoding, InterferometerShape, FileFormat, ModeType, Process
 from .persistent_data import PersistentData
 from .versions import PMetadata
 from .density_matrix import DensityMatrix
-from .noise_model import NoiseModel
+from .noise_model import NoiseModel, perf_dict_to_noise, noise_to_perf_dict
 from .logging import get_logger, use_perceval_logger, use_python_logger, LoggerConfig, deprecated
-from .progress_cb import partial_progress_callable
+from .progress_cb import partial_progress_callable, ProgressCallback
 from .dist_metrics import tvd_dist, kl_divergence
+from .context_manager import ContextManager, ContextManagerDecorator, encapsulate_managers
+from .inspection import parse_signature, has_kwargs, has_arguments

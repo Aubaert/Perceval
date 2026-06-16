@@ -30,6 +30,7 @@
 from typing import Any
 
 from perceval.components import Experiment
+from perceval.serialization import register_to_serialization
 from .command import Command
 
 
@@ -46,6 +47,8 @@ class Computation:
         self.command = command
         self.experiment = experiment
         self.parameters: dict[str, Any] = dict()
+        self.job_name = command.name
+        self.job_group_name: str | None = None
 
     def add_params(self, *args, **kwargs) -> None:
         """
@@ -63,3 +66,15 @@ class Computation:
         :raises ValueError: if parameters are not correct
         """
         self.command.check(self.parameters)
+
+    def __iter__(self):
+        yield self
+
+    def __repr__(self):
+        s = f"Computation({self.command.name.capitalize()}"
+        if len(self.parameters):
+            s += f", parameters {self.parameters}"
+        s += ")"
+        return s
+
+register_to_serialization(Computation)

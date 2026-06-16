@@ -29,7 +29,8 @@
 from typing import TypeAlias
 
 import exqalibur as xq
-from exqalibur import BSCount, BSSamples, BSDistribution, StateVector
+from exqalibur import BSCount, BSSamples, StateVector
+from .bsdistribution import BSDistribution
 from multipledispatch import dispatch
 
 PostSelect: TypeAlias = xq.PostSelect
@@ -118,6 +119,15 @@ def post_select_statevector(
     if len(result):
         result.normalize()
     return result, logical_perf
+
+
+@dispatch(StateVector, PostSelect, dict, bool)
+def apply_post_select(
+        sv: StateVector,
+        postselect: PostSelect,
+        heralds: dict,
+        keep_heralds: bool = True) -> tuple[StateVector, float]:
+    return post_select_statevector(sv, postselect, heralds, keep_heralds)
 
 
 @dispatch(BSCount, PostSelect, dict, bool)

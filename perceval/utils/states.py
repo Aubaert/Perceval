@@ -35,6 +35,7 @@ from multipledispatch import dispatch
 from typing import Generator, Union, final, TypeAlias
 
 import exqalibur as xq
+from .bsdistribution import BSDistribution
 
 import numpy as np
 
@@ -45,7 +46,6 @@ AnnotatedFockState: TypeAlias = xq.AnnotatedFockState
 BSCount: TypeAlias = xq.BSCount
 BSSamples: TypeAlias = xq.BSSamples
 StateVector: TypeAlias = xq.StateVector
-BSDistribution: TypeAlias = xq.BSDistribution
 SVDistribution: TypeAlias = xq.SVDistribution
 
 class BasicStateMeta(type):
@@ -57,7 +57,10 @@ class BasicStateMeta(type):
 
     def __subclasscheck__(cls, sub):
         """Implement issubclass(sub, cls)."""
-        return any(c in cls._state_classes for c in sub.mro()) or sub is cls
+        try:
+            return any(c in cls._state_classes for c in sub.mro()) or sub is cls
+        except TypeError:
+            return False  # If sub.mro() doesn't work, this is not a BasicState
 
 State: TypeAlias = Union[FockState, NoisyFockState, AnnotatedFockState]
 

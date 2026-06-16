@@ -48,7 +48,7 @@ class SimulatorFactory:
     """
 
     @staticmethod
-    def build(circuit: ACircuit | Processor | list,
+    def build(circuit: ACircuit | Processor | Experiment | list,
               backend: ABackend | str = None,
               **kwargs) -> ISimulator:
         """
@@ -87,7 +87,7 @@ class SimulatorFactory:
                 heralds = circuit.heralds
                 noise = circuit.noise
                 if circuit.is_unitary:
-                    circuit = circuit.unitary_circuit(use_phase_noise=True)
+                    circuit = circuit.unitary_circuit()
                 else:
                     circuit = circuit.components
 

@@ -29,11 +29,11 @@
 
 from abc import abstractmethod, ABC
 
-from exqalibur import BSDistribution, BSCount, BSSamples
+from exqalibur import BSCount, BSSamples
 
 from ..computation import Computation
 
-from perceval.utils import NoiseModel, ConversionHelper, apply_min_photons, apply_post_select
+from perceval.utils import NoiseModel, ConversionHelper, apply_min_photons, apply_post_select, BSDistribution
 from perceval.components import Experiment
 
 
@@ -46,31 +46,30 @@ class AbstractMitigation(ABC):
     def extend_computation(self, computation: Computation, noise: NoiseModel) -> list[Computation]:
         """
         :param computation: The computation asked by the upper layer
-        :param noise: The Executant noise
+        :param noise: The Computer noise
         :return: a list of all computations to execute to apply the mitigation
         """
         pass
 
     @abstractmethod
-    def _parse_results(self, results: list[dict]) -> dict:
+    def _parse_results(self, results: list[dict], noise: NoiseModel) -> dict:
         """
         Parses the results obtained from an iterator obtained through extend_computation().
         :param results: The results for the list of computations obtained through extend_computation()
-        :return: A dict with the fields "results", "global_perf", "n_shots", "n_samples"
+        :param noise: The Computer noise with which the results were obtained
+        :return: A dict with the fields "results", "global_perf", "nb_shots_used"
         """
         pass
 
-    def parse_results(self, computation: Computation, results: list[dict]) -> dict:
+    def parse_results(self, computation: Computation, results: list[dict], noise: NoiseModel) -> dict:
         """
         Parses the results obtained from an iterator obtained through extend_computation().
         :param computation: The computation asked by the upper layer
         :param results: The results for the list of computations obtained through extend_computation()
+        :param noise: The Computer noise with which the results were obtained
         :return: The mitigated result, matching the expectations of computation
         """
-        # TODO: add noise to parameters? Start from the principle that we have it in the results?
-        #       If second, we should always add the noise in the results, no matter if we are simulator or QPU
-
-        result = self._parse_results(results)
+        result = self._parse_results(results, noise)
 
         res, physical_perf, logical_perf = self._apply_filtering(computation.experiment, result["results"])
 

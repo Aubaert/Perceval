@@ -29,6 +29,9 @@
 
 from typing import Any
 
+from perceval.utils.constants import KEY_MAX_SAMPLES, KEY_MAX_SHOTS
+from perceval.serialization import register_to_serialization
+
 
 class Command:
     """
@@ -37,7 +40,7 @@ class Command:
     The signature is exposed with a list of (name, expected type, is_mandatory)
     """
 
-    def __init__(self, name: str, signature: list[tuple[str, type, bool]], apply_emt: bool = True):
+    def __init__(self, name: str, signature: list[tuple[str, type | None, bool]], apply_emt: bool = True):
         # Signature is essentially a dict, but the ordering is important
         # Even though python preserves dict order, we prefer not to rely on it
         self.name = name
@@ -69,7 +72,7 @@ class Command:
                 raise TypeError("Too many arguments")
             name, t, _ = self.signature[i]
 
-            if not isinstance(arg, t):
+            if t is not None and not isinstance(arg, t):
                 raise TypeError(f"Argument received for {name} is not a {t.__name__}. Received {type(arg).__name__}")
 
             res[name] = arg
@@ -78,7 +81,7 @@ class Command:
             if name in kwargs:
                 value = kwargs.pop(name)
 
-                if not isinstance(value, t):
+                if t is not None and not isinstance(value, t):
                     raise TypeError(
                         f"Argument received for {name} is not a {t.__name__}. Received {type(value).__name__}")
 
@@ -92,16 +95,26 @@ class Command:
 
         return res
 
+    def __repr__(self):
+        s = f"Command('{self.name}', signature: {self.signature}"
+        if self.apply_emt:
+            s += ', error mitigation compatible'
+        s += ")"
+        return s
+
 
 class CommandFactoryClass:
 
     def __init__(self):
-        self.probs = Command(name="probs", signature=[("max_samples", int, False), ("max_shots", int, False)], apply_emt=True)
+        self.probs = Command(name="probs", signature=[(KEY_MAX_SAMPLES, int, False), (KEY_MAX_SHOTS, int, False)], apply_emt=True)
         self.samples = self.create_acquisition_command("samples")
         self.sample_count = self.create_acquisition_command("sample_count")
 
     @staticmethod
     def create_acquisition_command(name: str) -> Command:
-        return Command(name=name, signature=[("max_samples", int, True), ("max_shots", int, False)], apply_emt=True)
+        return Command(name=name, signature=[(KEY_MAX_SAMPLES, int, True), (KEY_MAX_SHOTS, int, False)], apply_emt=True)
 
 CommandFactory = CommandFactoryClass()
+
+
+register_to_serialization(Command)
