@@ -62,7 +62,7 @@ class CoherentState:
         return self._amplitudes == other._amplitudes
 
     def __ne__(self, other: CoherentState) -> bool:
-        return not self != other
+        return self._amplitudes != other._amplitudes
 
     def __getitem__(self, item: int) -> complex:
         return self._amplitudes[item]
