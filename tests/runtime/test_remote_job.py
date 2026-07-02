@@ -35,6 +35,7 @@ from time import sleep
 import perceval as pcvl
 from perceval import Detector
 from perceval.algorithm import Sampler
+from perceval.components import Processor
 from perceval.runtime import RemoteJob, RunningStatus
 from perceval.runtime.rpc_handler import RPCHandler
 from perceval.utils.dist_metrics import tvd_dist
@@ -135,7 +136,7 @@ def test_mock_remote_with_gates(catalog_item):
     """test mock remote with gates"""
     noise = pcvl.NoiseModel(
         g2=0.003, transmittance=0.06, phase_imprecision=0, indistinguishability=0.92)
-    p = pcvl.catalog[catalog_item].build_processor()
+    p = Processor("SLOS", pcvl.catalog[catalog_item].build_experiment())
     p.noise = noise
     rp = pcvl.RemoteProcessor.from_local_processor(
         p, rpc_handler=get_rpc_handler_for_tests()
@@ -158,11 +159,11 @@ def test_mock_remote_with_gates(catalog_item):
 def test_remote_with_gates_probs(catalog_item):
     noise = pcvl.NoiseModel(
         g2=0.003, transmittance=0.06, phase_imprecision=0, indistinguishability=0.92)
-    p = pcvl.catalog[catalog_item].build_processor()
+    p = Processor("SLOS", pcvl.catalog[catalog_item].build_experiment())
     p.min_detected_photons_filter(2 + list(p.heralds.values()).count(1))
     p.noise = noise
 
-    rp = pcvl.RemoteProcessor.from_local_processor(p, 'sim:altair', url='https://api.cloud.quandela.com')
+    rp = pcvl.RemoteProcessor.from_local_processor(p, 'sim:belenos', url='https://api.cloud.quandela.com')
 
     # platform parameters
     for m in range(p.circuit_size):
@@ -202,11 +203,11 @@ def test_remote_with_gates_probs(catalog_item):
 def test_remote_with_gates_samples(catalog_item):
     noise = pcvl.NoiseModel(
         g2=0.003, transmittance=0.06, phase_imprecision=0, indistinguishability=0.92)
-    p = pcvl.catalog[catalog_item].build_processor()
+    p = Processor("SLOS", pcvl.catalog[catalog_item].build_experiment())
     p.min_detected_photons_filter(2 + list(p.heralds.values()).count(1))
     p.noise = noise
     rp = pcvl.RemoteProcessor.from_local_processor(
-        p, "sim:altair", url='https://api.cloud.quandela.com')
+        p, "sim:belenos", url='https://api.cloud.quandela.com')
 
     # platform parameters
     for m in range(p.circuit_size):
