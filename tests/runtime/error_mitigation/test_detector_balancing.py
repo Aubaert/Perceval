@@ -96,4 +96,4 @@ def test_recombination():
 
     res = averaging.parse_results(computation, sub_results, noise)
 
-    assert res[KEY_RESULTS]._container == pytest.approx(expected[KEY_RESULTS]._container)
+    assert res == expected
