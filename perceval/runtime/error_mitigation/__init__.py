@@ -30,3 +30,4 @@
 from .loss_mitigation import photon_recycling, PhotonRecycling
 from .abstract_mitigation import AbstractMitigation
 from .compilation_averaging import CompilationAveraging
+from .detector_balancing import DetectorBalancing
