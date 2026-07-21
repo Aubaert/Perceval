@@ -34,7 +34,7 @@ KEY_COMPILATION_SEED = "compilation_seed"
 
 # Results keys
 KEY_RESULTS = "results"
-KEY_SHOTS_USED = "nb_shots_used"
+KEY_SHOTS_USED = "nb_shots_used"  # Must match the name used by the cloud
 KEY_RESULTS_LIST = "results_list"
 KEY_ITERATION = "iteration"
 KEY_GLOBAL_PERF = "global_perf"
@@ -65,7 +65,7 @@ KEY_HERALDS = "heralds"
 KEY_MIN_DETECTED_PHOTONS = "min_detected_photons"
 
 # Global data keys
-KEY_VERSION = "pcvl_version"
+KEY_VERSION = "pcvl_version"  # Must match the name used by the cloud
 KEY_PROCESS_ID = "process_id"
 KEY_PAYLOAD = "payload"
 KEY_PLATFORM_NAME = "platform_name"
