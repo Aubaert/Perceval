@@ -26,6 +26,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import math
+import warnings
+
 from ._validated_params import AValidatedParam, ValidatedBool, ValidatedFloat
 from math import pi
 
@@ -70,7 +73,8 @@ class NoiseModel:
                  g2_distinguishable: bool = None,
                  transmittance: float = None,
                  phase_imprecision: float = None,
-                 phase_error: float = None
+                 phase_error: float = None,
+                 loss_ratios: list[float] = None
                  ):
         self.brightness = brightness
         self.indistinguishability = indistinguishability
@@ -79,6 +83,26 @@ class NoiseModel:
         self.transmittance = transmittance
         self.phase_imprecision = phase_imprecision
         self.phase_error = phase_error
+        self.loss_ratios = loss_ratios
+
+    @property
+    def loss_ratios(self) -> list[float] | None:
+        return self._loss_ratios
+
+    @loss_ratios.setter
+    def loss_ratios(self, values: list[float] | None):
+        if values:
+            valids = [math.isfinite(v) and v > 0. for v in values]
+            if not all(valids):
+                warnings.warn(
+                    "Calibrated detector loss ratios contain non-positive or non-finite "
+                    "values. Replacing invalid entries with 1.0.",
+                    RuntimeWarning,
+                )
+            self._loss_ratios = [ v if valid else 1. for v, valid in zip(values, valids) ]
+            #TODO: divide by max(valid_ratios) ?
+        else:
+            self._loss_ratios = []
 
     def __deepcopy__(self, memo):
         return NoiseModel(**self.__dict__())
@@ -97,6 +121,8 @@ class NoiseModel:
                 v = getattr(self, attr)
                 if v != cls.__dict__[attr].default_value:
                     res[attr] = v
+        if self.loss_ratios:
+            res["loss_ratio"] = self.loss_ratios
         return res
 
     def __eq__(self, other) -> bool:
@@ -116,10 +142,12 @@ def perf_dict_to_noise(perfs: dict[str, float]) -> NoiseModel:
         nm.indistinguishability = perfs[INDISTINGUISHABILITY_KEY] / 100
     if G2_KEY in perfs:
         nm.g2 = perfs[G2_KEY] / 100
+    #TODO loss ratios
     return nm
 
 
 def noise_to_perf_dict(nm: NoiseModel) -> dict:
+    #TODO loss ratios
     return {
         INDISTINGUISHABILITY_KEY: nm.indistinguishability * 100,
         TRANSMITTANCE_KEY: nm.brightness * nm.transmittance * 100,
