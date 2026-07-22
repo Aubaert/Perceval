@@ -36,20 +36,10 @@ from exqalibur.exqalibur import PostSelect
 
 from perceval import DetectorBalancing, Computation, CommandFactory, Experiment, NoiseModel, Command, BSCount, \
     apply_min_photons, apply_post_select
+from perceval.runtime.simulated_computer import SimulatedComputer
 from perceval.utils.bsdistribution import BSDistribution
-from perceval.utils.constants import KEY_SHOTS_USED, KEY_RESULTS
-
-
-def test_computation_extension():
-    computation = Computation(CommandFactory.samples, Experiment())
-    averaging = DetectorBalancing()
-    comp_list = averaging.extend_computation(computation, NoiseModel())
-
-    assert len(comp_list) == 1
-
-    assert all(comp.command == "probs" for comp in comp_list)
-
-
+from perceval.utils.constants import KEY_SHOTS_USED
+from perceval.utils.states import BasicState
 
 def prepare_test():
     raw_results = BSDistribution({FockState([0, 1]): 1,
@@ -84,6 +74,16 @@ def prepare_test():
     return expected, sub_results
 
 
+def test_computation_extension():
+    computation = Computation(CommandFactory.samples, Experiment())
+    averaging = DetectorBalancing()
+    comp_list = averaging.extend_computation(computation, NoiseModel())
+
+    assert len(comp_list) == 1
+
+    assert all(comp.command.name == "probs" for comp in comp_list)
+
+
 def test_recombination():
     expected, sub_results = prepare_test()
     noise = NoiseModel()
@@ -97,3 +97,19 @@ def test_recombination():
     res = averaging.parse_results(computation, sub_results, noise)
 
     assert res == expected
+
+
+def test_run_through():
+    computer = SimulatedComputer("SLOS")
+    computer.mitigations = [ DetectorBalancing() ]
+    noise = NoiseModel()
+    noise.loss_ratios = [1., .5]
+    computer.noise = noise
+
+    e = Experiment(2)
+    e.min_detected_photons_filter(1)
+    e.with_input(BasicState([1, 0]))
+    computation = Computation(CommandFactory.probs, e)
+    computation.add_params(max_shots = 50000, max_samples = 10000)
+
+    computer.execute(computation)

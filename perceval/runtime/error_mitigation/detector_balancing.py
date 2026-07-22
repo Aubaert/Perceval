@@ -38,6 +38,7 @@ from perceval.utils import NoiseModel
 from perceval.utils.constants import KEY_RESULTS
 
 class DetectorBalancing(AbstractMitigation):
+    # Note: we do not know if it behaves correctly with Feef-Forward
 
     APPLY_MIN_PHOTONS = False
     APPLY_LOGICAL_SELECTION = True
