@@ -31,6 +31,8 @@ from copy import deepcopy, copy
 import math
 import warnings
 
+from perceval.utils.logging import get_logger
+
 from .abstract_mitigation import AbstractMitigation
 from ..computation import Computation
 
@@ -41,7 +43,7 @@ class DetectorBalancing(AbstractMitigation):
     # Note: we do not know if it behaves correctly with Feef-Forward
 
     APPLY_MIN_PHOTONS = False
-    APPLY_LOGICAL_SELECTION = True
+    APPLY_LOGICAL_SELECTION = False
 
     def __init__(self):
         """
@@ -57,7 +59,7 @@ class DetectorBalancing(AbstractMitigation):
     def _parse_results(self, computation: Computation, results: list[dict], noise: NoiseModel) -> dict:
         ratios = noise.loss_ratios
         if len(ratios) < computation.experiment.m:
-            warnings.warn(
+            get_logger().warnings.warn(
                 "Not enough loss ratio for DetectorBalancing: "
                 "defaulting missing ones to 1.",
                 RuntimeWarning,

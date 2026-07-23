@@ -29,6 +29,8 @@
 import math
 import warnings
 
+from perceval.utils.logging import get_logger
+
 from ._validated_params import AValidatedParam, ValidatedBool, ValidatedFloat
 from math import pi
 
@@ -94,7 +96,7 @@ class NoiseModel:
         if values:
             valids = [math.isfinite(v) and v > 0. for v in values]
             if not all(valids):
-                warnings.warn(
+                get_logger().warnings.warn(
                     "Calibrated detector loss ratios contain non-positive or non-finite "
                     "values. Replacing invalid entries with 1.0.",
                     RuntimeWarning,
