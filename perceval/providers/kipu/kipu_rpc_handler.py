@@ -1,3 +1,5 @@
+# SKIP LICENSE INSERTION
+
 # MIT License
 #
 # Copyright (c) 2026 Kipu Quantum GmbH
@@ -28,6 +30,8 @@
 # SOFTWARE.
 
 from datetime import datetime
+
+from perceval.utils.constants import KEY_VERSION, KEY_PROCESS_ID, KEY_JOB_NAME, KEY_MAX_SHOTS, KEY_MAX_SAMPLES, KEY_PAYLOAD
 
 _MISSING_QHUB_MSG = (
     "The Kipu Quantum Hub provider requires the 'qhub-api' package. "
@@ -214,8 +218,8 @@ class KipuRPCHandler:
     def create_job(self, payload: dict) -> str:
         """Submit a Perceval job payload to the Hub. Returns the Hub job id."""
         qhub = _import_qhub()
-        inner = payload.get("payload") or {}
-        shots = inner.get("max_shots") or inner.get("max_samples") or 0
+        inner = payload.get(KEY_PAYLOAD) or {}
+        shots = inner.get(KEY_MAX_SHOTS) or inner.get(KEY_MAX_SAMPLES) or 0
 
         input_cls = qhub["input"][self._backend_id]
         params_cls = qhub["params"][self._backend_id]
@@ -226,11 +230,11 @@ class KipuRPCHandler:
             input=input_cls(value=inner),
             input_format="PERCEVAL",
             input_params=params_cls(
-                pcvl_version=payload.get("pcvl_version"),
-                process_id=payload.get("process_id"),
+                pcvl_version=payload.get(KEY_VERSION),
+                process_id=payload.get(KEY_PROCESS_ID),
             ),
             sdk_provider="PERCEVAL",
-            name=payload.get("job_name"),
+            name=payload.get(KEY_JOB_NAME),
         )
         return job.id
 

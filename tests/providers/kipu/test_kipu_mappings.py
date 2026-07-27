@@ -56,6 +56,40 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .kipu_session import Session
-from .kipu_rpc_handler import KipuRPCHandler
-from .kipu_communication_layer import KipuCommunicationLayer
+import pytest
+
+from perceval.providers.kipu.kipu_rpc_handler import (
+    _resolve_backend_id,
+    _to_perceval_status,
+)
+
+
+def test_resolve_backend_id_passthrough():
+    assert _resolve_backend_id("quandela.sim.belenos") == "quandela.sim.belenos"
+    assert _resolve_backend_id("quandela.qpu.belenos") == "quandela.qpu.belenos"
+
+
+def test_resolve_backend_id_alias():
+    assert _resolve_backend_id("sim:belenos") == "quandela.sim.belenos"
+    assert _resolve_backend_id("qpu:belenos") == "quandela.qpu.belenos"
+
+
+def test_resolve_backend_id_unknown_raises():
+    with pytest.raises(ValueError, match="quandela.sim.belenos"):
+        _resolve_backend_id("nonsense")
+
+
+@pytest.mark.parametrize("hub_status,expected", [
+    ("PENDING", "waiting"),
+    ("RUNNING", "running"),
+    ("COMPLETED", "completed"),
+    ("FAILED", "error"),
+    ("CANCELLING", "cancel_requested"),
+    ("CANCELLED", "canceled"),
+    ("ABORTED", "error"),
+    ("UNKNOWN", "unknown"),
+    (None, "unknown"),
+    ("SOMETHING_NEW", "unknown"),
+])
+def test_to_perceval_status(hub_status, expected):
+    assert _to_perceval_status(hub_status) == expected

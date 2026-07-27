@@ -26,32 +26,28 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from perceval.runtime.communication_layer import RPCBasedCommunicationLayer
 
-from perceval.runtime import AProcessor
+from perceval.utils.logging import get_logger, channel
+
+from .kipu_rpc_handler import KipuRPCHandler
 
 
-class AAlgorithm:
-    _MAX_SHOTS_NAMED_PARAM = "max_shots_per_call"
+class KipuCommunicationLayer(RPCBasedCommunicationLayer):
 
-    def __init__(self, processor: AProcessor, **kwargs):
-        self._processor = processor
-        if not self._check_compatibility():
-            raise RuntimeError("Processor and algorithm are not compatible")
+    def __init__(self,
+                 platform_name: str,
+                 token: str = None,
+                 organization_id: str = None,
+                 url: str = None,
+                 proxies: dict = None):
 
-        self.default_job_name = None
+        super().__init__(KipuRPCHandler(
+            platform_name=platform_name,
+            url=url,
+            token=token,
+            organization_id=organization_id,
+            proxies=proxies,
+        ))
 
-        self._max_shots = kwargs.get(self._MAX_SHOTS_NAMED_PARAM)
-        if self._max_shots:
-            self._max_shots = int(self._max_shots)
-            if self._max_shots < 1:
-                raise RuntimeError(f'`{self._MAX_SHOTS_NAMED_PARAM}` must be a positive value')
-        # max_shots_per_call must be found in **kwargs when the processor is remote.
-        # This condition is forced because the user will consume credits on the cloud and needs to set an upper bound
-        if processor.is_remote and not self._max_shots:
-            raise RuntimeError(f'Please input a `{self._MAX_SHOTS_NAMED_PARAM}` value when using a RemoteProcessor')
-
-    def _check_compatibility(self) -> bool:
-        # if self._processor.is_remote:
-        #     # TODO remote compatibility check
-        #     return False
-        return True
+        get_logger().info(f"Connected to Kipu Cloud platform {platform_name}", channel.general)

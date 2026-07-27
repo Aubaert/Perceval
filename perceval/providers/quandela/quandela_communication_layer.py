@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2026 Kipu Quantum GmbH
+# Copyright (c) 2022 Quandela
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,41 +26,23 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from requests import HTTPError
 
-import pytest
+from perceval.runtime.communication_layer import RPCBasedCommunicationLayer
+from perceval.utils.logging import get_logger, channel
 
-from perceval.providers.kipu.kipu_rpc_handler import (
-    _resolve_backend_id,
-    _to_perceval_status,
-)
+from .rpc_handler import RPCHandler
 
+class QuandelaCommunicationLayer(RPCBasedCommunicationLayer):
 
-def test_resolve_backend_id_passthrough():
-    assert _resolve_backend_id("quandela.sim.belenos") == "quandela.sim.belenos"
-    assert _resolve_backend_id("quandela.qpu.belenos") == "quandela.qpu.belenos"
+    def __init__(self, name: str, token: str, url: str, proxies: dict[str, str] = None):
+        super().__init__(RPCHandler(name, url, token, proxies))
+        get_logger().info(f"Connected to Cloud platform {name}", channel.general)
 
-
-def test_resolve_backend_id_alias():
-    assert _resolve_backend_id("sim:belenos") == "quandela.sim.belenos"
-    assert _resolve_backend_id("qpu:belenos") == "quandela.qpu.belenos"
-
-
-def test_resolve_backend_id_unknown_raises():
-    with pytest.raises(ValueError, match="quandela.sim.belenos"):
-        _resolve_backend_id("nonsense")
-
-
-@pytest.mark.parametrize("hub_status,expected", [
-    ("PENDING", "waiting"),
-    ("RUNNING", "running"),
-    ("COMPLETED", "completed"),
-    ("FAILED", "error"),
-    ("CANCELLING", "cancel_requested"),
-    ("CANCELLED", "canceled"),
-    ("ABORTED", "error"),
-    ("UNKNOWN", "unknown"),
-    (None, "unknown"),
-    ("SOMETHING_NEW", "unknown"),
-])
-def test_to_perceval_status(hub_status, expected):
-    assert _to_perceval_status(hub_status) == expected
+    def get_availability(self) -> int:
+        try:
+            availability = self._rpc_handler.get_job_availability()
+            return availability["max_jobs_in_queue"] - availability["num_jobs_in_queue"]
+        except HTTPError:
+            get_logger().warn("Impossible to determine whether there is room for a new job")
+            return 0

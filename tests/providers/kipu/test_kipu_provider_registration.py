@@ -56,6 +56,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .kipu_session import Session
-from .kipu_rpc_handler import KipuRPCHandler
-from .kipu_communication_layer import KipuCommunicationLayer
+from perceval.runtime import ISession
+from perceval.providers import ProviderFactory
+
+
+def test_kipu_in_provider_list():
+    assert "Kipu" in ProviderFactory.list()
+
+
+def test_get_kipu_provider():
+    session = ProviderFactory.get_provider(
+        "Kipu",
+        platform_name="quandela.sim.belenos",
+        token="t",
+        organization_id="org-1",
+    )
+    assert isinstance(session, ISession)
+
+
+def test_kipu_package_exports():
+    from perceval.providers.kipu import Session, KipuRPCHandler
+    assert Session is not None
+    assert KipuRPCHandler is not None
