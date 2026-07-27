@@ -77,6 +77,8 @@ class NoiseModel:
                  phase_imprecision: float = None,
                  phase_error: float = None,
                  loss_ratios: list[float] = None
+                 , transmitance_ratios_input: list[float] = None
+                 , transmitance_ratios_output: list[float] = None
                  ):
         self.brightness = brightness
         self.indistinguishability = indistinguishability
@@ -96,7 +98,7 @@ class NoiseModel:
         if values:
             valids = [math.isfinite(v) and v > 0. for v in values]
             if not all(valids):
-                get_logger().warnings.warn(
+                get_logger().warn(
                     "Calibrated detector loss ratios contain non-positive or non-finite "
                     "values. Replacing invalid entries with 1.0.",
                     RuntimeWarning,

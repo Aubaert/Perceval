@@ -53,7 +53,7 @@ class RemoteConfig:
     _token = None
     _url = None
 
-    def __init__(self, persistent_data: PersistentData = PersistentData()):
+    def __init__(self, persistent_data: PersistentData = PersistentData()): # !! default value is evaluated during file load, so test_remote_config_env_var_vs_cache cannot mock it !!
         self._persistent_data = persistent_data
 
     def _get_remote_config(self, key) -> str | dict[str, str] | None:
