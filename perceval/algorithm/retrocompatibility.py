@@ -46,19 +46,25 @@ def computer_from_processor(processor: AProcessor) -> AbstractComputer:
     # It should not be documented as it is intended for internal purpose only
     # We do the best we can. We can't cover cases that don't belong to perceval.
     if isinstance(processor, Processor):
-        return SimulatedComputer(processor.backend)
+        computer = SimulatedComputer(processor.backend)
 
-    if isinstance(processor, RemoteProcessor):
+    elif isinstance(processor, RemoteProcessor):
         rpc = processor.get_rpc_handler()
         if isinstance(rpc, QuandelaRPCHandler):
-            return RemoteComputer(QuandelaCommunicationLayer.from_rpc(rpc))
-        if isinstance(rpc, KipuRPCHandler):
-            return RemoteComputer(KipuCommunicationLayer.from_rpc(rpc))
-        if isinstance(rpc, ScalewayRPCHandler):
-            return RemoteComputer(ScalewayCommunicationLayer.from_rpc(rpc))
-        return RemoteComputer(RPCBasedCommunicationLayer(rpc))
+            computer = RemoteComputer(QuandelaCommunicationLayer.from_rpc(rpc))
+        elif isinstance(rpc, KipuRPCHandler):
+            computer = RemoteComputer(KipuCommunicationLayer.from_rpc(rpc))
+        elif isinstance(rpc, ScalewayRPCHandler):
+            computer = RemoteComputer(ScalewayCommunicationLayer.from_rpc(rpc))
+        else:
+            computer = RemoteComputer(RPCBasedCommunicationLayer(rpc))
 
-    raise NotImplementedError(f'No Computer can be obtained for the given processor of type "{type(processor).__name__}".')
+    else:
+        raise NotImplementedError(f'No Computer can be obtained for the given processor of type "{type(processor).__name__}".')
+
+    computer.noise = processor.experiment.noise
+    computer.parameters = processor.parameters
+    return computer
 
 
 def adapt_arguments_with_processor(args: tuple, kwargs: dict[str, Any]) -> tuple[tuple, dict[str, Any]]:

@@ -89,14 +89,11 @@ class TomographyMLE(AAlgorithm, metaclass=RetroCompatibilityMeta):
     def _povm_data(self):
         pass
 
-    def _compute_probs(self, prep_state_indices, state_meas_indices, denormalize=False):
-        return _compute_probs(self, prep_state_indices, state_meas_indices, denormalize=denormalize)
-
     def _collect_data(self, prep_state_indices, state_meas_indices) -> list:
         # performs measurements on the output_state for given preparation and measurement state indices at each qubit
 
-        output_distribution, self._gate_logical_perf = self._compute_probs(prep_state_indices, state_meas_indices,
-                                                                           denormalize=False)
+        output_distribution, self._gate_logical_perf = _compute_probs(self, prep_state_indices, state_meas_indices,
+                                                                      denormalize=False)
 
         measured_output = []
         for j in range(2**self._nqubit):
