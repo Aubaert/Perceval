@@ -69,10 +69,6 @@ class FFSimulator(ISimulator):
     def set_noise(self, nm: NoiseModel):
         self._noise_model = nm
 
-    @deprecated("Version 1.1 - Source is no longer used")
-    def set_source(self, source: Source):
-        pass
-
     def _probs_svd(self,
                    input_state: SVDistribution | tuple[Source, BasicState],
                    detectors: list[IDetector] = None,

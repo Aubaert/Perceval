@@ -151,16 +151,6 @@ class RemoteConfig:
         return RemoteConfig._token_env_var
 
     @staticmethod
-    @deprecated(version="v1.1", reason="RemoteConfig maximal job count is no longer used as it is now directly retrieved from the cloud")
-    def set_cloud_maximal_job_count(count: int) -> None:
-        pass
-
-    @staticmethod
-    @deprecated(version="v1.1", reason="RemoteConfig maximal job count is no longer used as it is now directly retrieved from the cloud")
-    def get_cloud_maximal_job_count() -> int:
-        return 0
-
-    @staticmethod
     def clear_cache():
         """Delete the RemoteConfig cache."""
         RemoteConfig._proxies = None
