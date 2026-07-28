@@ -100,8 +100,7 @@ class NoiseModel:
             if not all(valids):
                 get_logger().warn(
                     "Calibrated detector loss ratios contain non-positive or non-finite "
-                    "values. Replacing invalid entries with 1.0.",
-                    RuntimeWarning,
+                    "values. Replacing invalid entries with 1.0."
                 )
             self._loss_ratios = [ v if valid else 1. for v, valid in zip(values, valids) ]
             #TODO: divide by max(valid_ratios) ?

@@ -61,8 +61,7 @@ class DetectorBalancing(AbstractMitigation):
         if len(ratios) < computation.experiment.m:
             get_logger().warn(
                 "Not enough loss ratio for DetectorBalancing: "
-                "defaulting missing ones to 1.",
-                RuntimeWarning,
+                "defaulting missing ones to 1."
             )
             ratios.extend([1.] * (computation.experiment.m - len(ratios)))
 
