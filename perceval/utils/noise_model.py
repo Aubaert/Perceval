@@ -76,9 +76,8 @@ class NoiseModel:
                  transmittance: float = None,
                  phase_imprecision: float = None,
                  phase_error: float = None,
-                 loss_ratios: list[float] = None
-                 , transmitance_ratios_input: list[float] = None
-                 , transmitance_ratios_output: list[float] = None
+                 transmitance_ratios_input: list[float] = None,
+                 transmitance_ratios_output: list[float] = None
                  ):
         self.brightness = brightness
         self.indistinguishability = indistinguishability
@@ -87,25 +86,35 @@ class NoiseModel:
         self.transmittance = transmittance
         self.phase_imprecision = phase_imprecision
         self.phase_error = phase_error
-        self.loss_ratios = loss_ratios
+        self._transmitance_ratios_input = transmitance_ratios_input
+        self._transmitance_ratios_output = transmitance_ratios_output
+
+    @staticmethod
+    def _validate_transmitance_values(values: list[float] | None) -> list[float]:
+        if not values:
+            return []
+
+        valids = [math.isfinite(v) and v >= 0. and v <= 1. for v in values]
+        if not all(valids):
+            get_logger().warn("Calibrated detector transmitance ratios invalid values, replaced with 1.0.")
+            # raise ValueError("Calibrated detector transmitance ratios invalid values")
+        return [ v if valid else 1. for v, valid in zip(values, valids) ]
 
     @property
-    def loss_ratios(self) -> list[float] | None:
-        return self._loss_ratios
+    def transmitance_ratios_input(self) -> list[float] | None:
+        return self._transmitance_ratios_input
 
-    @loss_ratios.setter
-    def loss_ratios(self, values: list[float] | None):
-        if values:
-            valids = [math.isfinite(v) and v > 0. for v in values]
-            if not all(valids):
-                get_logger().warn(
-                    "Calibrated detector loss ratios contain non-positive or non-finite "
-                    "values. Replacing invalid entries with 1.0."
-                )
-            self._loss_ratios = [ v if valid else 1. for v, valid in zip(values, valids) ]
-            #TODO: divide by max(valid_ratios) ?
-        else:
-            self._loss_ratios = []
+    @transmitance_ratios_input.setter
+    def transmitance_ratios_input(self, values: list[float] | None):
+        self._transmitance_ratios_input = self._validate_transmitance_values(values)
+
+    @property
+    def transmitance_ratios_output(self) -> list[float] | None:
+        return self._transmitance_ratios_output
+
+    @transmitance_ratios_output.setter
+    def transmitance_ratios_output(self, values: list[float] | None):
+        self._transmitance_ratios_output = self._validate_transmitance_values(values)
 
     def __deepcopy__(self, memo):
         return NoiseModel(**self.__dict__())
@@ -124,8 +133,10 @@ class NoiseModel:
                 v = getattr(self, attr)
                 if v != cls.__dict__[attr].default_value:
                     res[attr] = v
-        if self.loss_ratios:
-            res["loss_ratio"] = self.loss_ratios
+        if self._transmitance_ratios_input:
+            res["transmitance_ratios_input"] = self._transmitance_ratios_input
+        if self._transmitance_ratios_output:
+            res["transmitance_ratios_output"] = self._transmitance_ratios_output
         return res
 
     def __eq__(self, other) -> bool:
@@ -146,6 +157,7 @@ def perf_dict_to_noise(perfs: dict[str, float]) -> NoiseModel:
     if G2_KEY in perfs:
         nm.g2 = perfs[G2_KEY] / 100
     #TODO loss ratios
+    # divide by max(valid_ratios) ?
     return nm
 
 

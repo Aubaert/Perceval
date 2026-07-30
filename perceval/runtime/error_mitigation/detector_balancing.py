@@ -57,7 +57,7 @@ class DetectorBalancing(AbstractMitigation):
         return [comp]
 
     def _parse_results(self, computation: Computation, results: list[dict], noise: NoiseModel) -> dict:
-        ratios = noise.loss_ratios
+        ratios = [ v for v in noise.transmitance_ratios_output ]
         if len(ratios) < computation.experiment.m:
             get_logger().warn(
                 "Not enough loss ratio for DetectorBalancing: "

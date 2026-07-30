@@ -87,7 +87,7 @@ def test_computation_extension():
 def test_recombination():
     expected, sub_results = prepare_test()
     noise = NoiseModel()
-    noise.loss_ratios = [1., 1.]
+    noise.transmitance_ratios_output = [1., 1.]
 
     averaging = DetectorBalancing()
 
@@ -103,7 +103,7 @@ def test_run_through():
     computer = SimulatedComputer("SLOS")
     computer.mitigations = [ DetectorBalancing() ]
     noise = NoiseModel()
-    noise.loss_ratios = [1., .5]
+    noise.transmitance_ratios_output = [1., .5]
     computer.noise = noise
 
     e = Experiment(2)
