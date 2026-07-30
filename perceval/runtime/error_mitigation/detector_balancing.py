@@ -56,8 +56,13 @@ class DetectorBalancing(AbstractMitigation):
         comp.command.name = "probs"
         return [comp]
 
-    def _parse_results(self, computation: Computation, results: list[dict], noise: NoiseModel) -> dict:
-        ratios = [ v for v in noise.transmitance_ratios_output ]
+    def _parse_results(self, computation: Computation, results: list[dict], misc: object) -> dict:
+        valids = [math.isfinite(v) and v >= 0. and v <= 1. for v in misc.transmitance_ratios_output]
+        if not all(valids):
+            get_logger().warn("Calibrated detector transmitance ratios invalid values, replaced with 1.0.")
+            # raise ValueError("Calibrated detector transmitance ratios invalid values")
+        ratios = [ v if valid else 1. for v, valid in zip(misc.transmitance_ratios_output, valids) ]
+
         if len(ratios) < computation.experiment.m:
             get_logger().warn(
                 "Not enough loss ratio for DetectorBalancing: "
@@ -66,6 +71,7 @@ class DetectorBalancing(AbstractMitigation):
             ratios.extend([1.] * (computation.experiment.m - len(ratios)))
 
         res = copy(results[0])  # We are going to modify this to keep custom fields as much as we can
+        #TODO: check what happens if there are less photons than in the input state
         for k in res[KEY_RESULTS].keys():
             res[KEY_RESULTS][k] /= math.prod([ratios[k.photon2mode(i)] for i in range(k.n)])
         res[KEY_RESULTS].normalize()

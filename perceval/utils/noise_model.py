@@ -75,9 +75,7 @@ class NoiseModel:
                  g2_distinguishable: bool = None,
                  transmittance: float = None,
                  phase_imprecision: float = None,
-                 phase_error: float = None,
-                 transmitance_ratios_input: list[float] = None,
-                 transmitance_ratios_output: list[float] = None
+                 phase_error: float = None
                  ):
         self.brightness = brightness
         self.indistinguishability = indistinguishability
@@ -86,35 +84,6 @@ class NoiseModel:
         self.transmittance = transmittance
         self.phase_imprecision = phase_imprecision
         self.phase_error = phase_error
-        self._transmitance_ratios_input = transmitance_ratios_input
-        self._transmitance_ratios_output = transmitance_ratios_output
-
-    @staticmethod
-    def _validate_transmitance_values(values: list[float] | None) -> list[float]:
-        if not values:
-            return []
-
-        valids = [math.isfinite(v) and v >= 0. and v <= 1. for v in values]
-        if not all(valids):
-            get_logger().warn("Calibrated detector transmitance ratios invalid values, replaced with 1.0.")
-            # raise ValueError("Calibrated detector transmitance ratios invalid values")
-        return [ v if valid else 1. for v, valid in zip(values, valids) ]
-
-    @property
-    def transmitance_ratios_input(self) -> list[float] | None:
-        return self._transmitance_ratios_input
-
-    @transmitance_ratios_input.setter
-    def transmitance_ratios_input(self, values: list[float] | None):
-        self._transmitance_ratios_input = self._validate_transmitance_values(values)
-
-    @property
-    def transmitance_ratios_output(self) -> list[float] | None:
-        return self._transmitance_ratios_output
-
-    @transmitance_ratios_output.setter
-    def transmitance_ratios_output(self, values: list[float] | None):
-        self._transmitance_ratios_output = self._validate_transmitance_values(values)
 
     def __deepcopy__(self, memo):
         return NoiseModel(**self.__dict__())
@@ -133,10 +102,6 @@ class NoiseModel:
                 v = getattr(self, attr)
                 if v != cls.__dict__[attr].default_value:
                     res[attr] = v
-        if self._transmitance_ratios_input:
-            res["transmitance_ratios_input"] = self._transmitance_ratios_input
-        if self._transmitance_ratios_output:
-            res["transmitance_ratios_output"] = self._transmitance_ratios_output
         return res
 
     def __eq__(self, other) -> bool:
@@ -156,13 +121,10 @@ def perf_dict_to_noise(perfs: dict[str, float]) -> NoiseModel:
         nm.indistinguishability = perfs[INDISTINGUISHABILITY_KEY] / 100
     if G2_KEY in perfs:
         nm.g2 = perfs[G2_KEY] / 100
-    #TODO loss ratios
-    # divide by max(valid_ratios) ?
     return nm
 
 
 def noise_to_perf_dict(nm: NoiseModel) -> dict:
-    #TODO loss ratios
     return {
         INDISTINGUISHABILITY_KEY: nm.indistinguishability * 100,
         TRANSMITTANCE_KEY: nm.brightness * nm.transmittance * 100,
