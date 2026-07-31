@@ -39,10 +39,10 @@ from .tomography_utils import (_matrix_basis, _matrix_to_vector, _vector_to_sq_m
                                _get_fixed_basis_ops, _get_canonical_basis_ops, _generate_pauli_index,
                                _generate_pauli_prep_index, _list_subset_k_from_n, _compute_probs)
 from ..abstract_algorithm import AAlgorithm
-from ..retrocompatibility import RetroCompatibilityMeta
+from ..processor_compatibility import ProcessorCompatibilityMeta
 
 
-class StateTomography(AAlgorithm, metaclass=RetroCompatibilityMeta):
+class StateTomography(AAlgorithm, metaclass=ProcessorCompatibilityMeta):
     """
     Experiment to reconstruct the state of the system by tomography experiment.
 

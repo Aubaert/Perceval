@@ -34,10 +34,10 @@ from perceval.utils import BasicState, allstate_iterator, Matrix, ProgressCallba
 from perceval.runtime import AbstractComputer
 
 from .abstract_algorithm import AAlgorithm
-from .retrocompatibility import RetroCompatibilityMeta
+from .processor_compatibility import ProcessorCompatibilityMeta
 
 
-class Analyzer(AAlgorithm, metaclass=RetroCompatibilityMeta):
+class Analyzer(AAlgorithm, metaclass=ProcessorCompatibilityMeta):
     """
     Analyzes a set of input states vs output states probabilities.
 

@@ -42,10 +42,10 @@ from .abstract_process_tomography import AProcessTomography
 from .tomography_utils import _state_to_dens_matrix, _matrix_to_vector, _get_fixed_basis_ops, _compute_probs, \
     _generate_pauli_prep_index, _generate_pauli_index, _index_num_to_basis
 from ..abstract_algorithm import AAlgorithm
-from ..retrocompatibility import RetroCompatibilityMeta
+from ..processor_compatibility import ProcessorCompatibilityMeta
 
 
-class TomographyMLE(AAlgorithm, metaclass=RetroCompatibilityMeta):
+class TomographyMLE(AAlgorithm, metaclass=ProcessorCompatibilityMeta):
     """
     Maximum likelihood Estimation for Quantum Tomography with an
     Accelerated Projected Gradient descent algorithm which takes an input guess and

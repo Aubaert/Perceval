@@ -35,10 +35,10 @@ from perceval.components import Experiment
 from perceval.runtime import AProcessor, AbstractComputer
 
 from .tomography_utils import _vector_to_sq_matrix, _krauss_repr_ops, _get_canonical_basis_ops
-from ..retrocompatibility import ARetroCompatibilityMeta
+from ..processor_compatibility import AProcessorCompatibilityMeta
 
 
-class AProcessTomography(AAlgorithm, metaclass=ARetroCompatibilityMeta):
+class AProcessTomography(AAlgorithm, metaclass=AProcessorCompatibilityMeta):
     def __init__(self, computer: AbstractComputer, experiment: Experiment, **kwargs):
         super().__init__(computer, **kwargs)
         self._experiment = experiment

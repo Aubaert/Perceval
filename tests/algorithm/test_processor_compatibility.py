@@ -32,7 +32,7 @@ from perceval.utils import NoiseModel, FockState
 from perceval.providers import QuandelaCommunicationLayer
 from perceval.runtime.legacy import Processor, RemoteProcessor
 from perceval.algorithm import Analyzer, StateTomography, ProcessTomography, StateTomographyMLE, ProcessTomographyMLE
-from perceval.algorithm.retrocompatibility import computer_from_processor
+from perceval.algorithm.processor_compatibility import computer_from_processor
 
 from tests.providers.quandela import get_rpc_handler_for_tests
 

@@ -42,9 +42,9 @@ from perceval.providers.scaleway import ScalewayCommunicationLayer, RPCHandler a
 # TODO: remove this file when removing the Processor support
 
 def computer_from_processor(processor: AProcessor) -> AbstractComputer:
-    # This method is a quick patch for places where a Processor is needed.
+    # This method is a patch for places where a Processor is needed.
     # It should not be documented as it is intended for internal purpose only
-    # We do the best we can. We can't cover cases that don't belong to perceval.
+    # This baseline should be adapted to specific cases if needed
     if isinstance(processor, Processor):
         computer = SimulatedComputer(processor.backend)
 
@@ -91,11 +91,11 @@ def adapt_arguments_with_processor(args: tuple, kwargs: dict[str, Any]) -> tuple
     return args, kwargs
 
 
-class RetroCompatibilityMeta(type):
+class ProcessorCompatibilityMeta(type):
     def __call__(cls, *args, **kwargs):
         args, kwargs = adapt_arguments_with_processor(args, kwargs)
         return super().__call__(*args, **kwargs)
 
 
-class ARetroCompatibilityMeta(ABCMeta, RetroCompatibilityMeta):
+class AProcessorCompatibilityMeta(ABCMeta, ProcessorCompatibilityMeta):
     pass

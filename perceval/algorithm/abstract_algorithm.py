@@ -29,7 +29,7 @@
 from perceval.runtime import AbstractComputer
 from perceval.runtime.legacy import AProcessor
 
-from .retrocompatibility import computer_from_processor
+from .processor_compatibility import computer_from_processor
 
 
 class AAlgorithm:
