@@ -36,7 +36,7 @@ from .globals import global_params
 
 import exqalibur
 
-class BSDistribution(Mapping):
+class BSDistribution():
     """
     Basic state distribution holding measured states (i.e. perfect Fock states), of the same size (number of modes).
 

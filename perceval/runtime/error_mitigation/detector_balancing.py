@@ -29,7 +29,6 @@
 
 from copy import deepcopy, copy
 import math
-import warnings
 
 from perceval.utils.logging import get_logger
 
