@@ -34,7 +34,7 @@ from .class_registry import ClassRegistry
 from .serializers import ClassWriter, DataReader, ClassReader, DescriptorType, ASerializer, SerializerNone, \
     SerializerBool, create_data_serializer, create_data_split_serializer, create_custom_class_serializer, \
     SerializerInt, SerializerFloat, SerializerComplex, SerializerStr, SerializerList, SerializerDict, \
-    SerializerTuple, T
+    SerializerTuple, T, SerializerType
 
 
 class Serialization:
@@ -107,17 +107,18 @@ class Serialization:
         # raise RuntimeError("Cannot create serializer")
         raise RuntimeError('\n'.join(errors))  # python 3.11: ExceptionGroup ?
 
-    # injected to avoid circular dependency
-    ClassRegistry.create_data_serializer = create_data_serializer
-    ClassRegistry.create_data_split_serializer = create_data_split_serializer
-    ClassRegistry.create_custom_class_serializer = create_custom_class_serializer
+# injected to avoid circular dependency
+ClassRegistry.create_data_serializer = create_data_serializer
+ClassRegistry.create_data_split_serializer = create_data_split_serializer
+ClassRegistry.create_custom_class_serializer = create_custom_class_serializer
 
-    ClassRegistry.register(SerializerNone())
-    ClassRegistry.register(SerializerBool())
-    ClassRegistry.register(SerializerInt())
-    ClassRegistry.register(SerializerFloat())
-    ClassRegistry.register(SerializerComplex())
-    ClassRegistry.register(SerializerStr())
-    ClassRegistry.register(SerializerList())
-    ClassRegistry.register(SerializerDict())
-    ClassRegistry.register(SerializerTuple())
+ClassRegistry.register(SerializerNone())
+ClassRegistry.register(SerializerBool())
+ClassRegistry.register(SerializerInt())
+ClassRegistry.register(SerializerFloat())
+ClassRegistry.register(SerializerComplex())
+ClassRegistry.register(SerializerStr())
+ClassRegistry.register(SerializerList())
+ClassRegistry.register(SerializerDict())
+ClassRegistry.register(SerializerTuple())
+ClassRegistry.register(SerializerType())

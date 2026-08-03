@@ -27,14 +27,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import Callable
-
-from .serializers import ASerializer
+from typing import Callable, Any
 
 
 class ClassRegistry:
-    _serializers_by_class = {}
-    _serializers_by_tag = {}
+    _serializers_by_class: dict[type, Any] = {}
+    _serializers_by_tag: dict[str, Any] = {}
 
     # Filled later in serialization.py due to circular imports
     create_data_serializer: Callable
@@ -42,7 +40,7 @@ class ClassRegistry:
     create_custom_class_serializer: Callable
 
     @staticmethod
-    def register(serdes: ASerializer):
+    def register(serdes):
         if serdes.type in ClassRegistry._serializers_by_class:
             raise RuntimeError(f"type {serdes.type.__name__} already registered")
         if serdes.class_tag in ClassRegistry._serializers_by_tag:

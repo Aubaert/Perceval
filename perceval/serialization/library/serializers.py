@@ -27,41 +27,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from abc import ABC, abstractmethod
 from types import NoneType
-from typing import Callable, Type, TypeAlias, TypeVar, Generic
+from typing import Type, Generic
 
+from .abstract_serializer import ASerializer, T, DescriptorType, PreRecorder, ClassWriter, DataReader, ClassReader
 from .archive import InputArchive, OutputArchive
-from .descriptors import PartialRecord, DescriptorClass, ADescriptor, DescriptorNone, DescriptorBool, DescriptorInteger, \
+from .descriptors import PartialRecord, DescriptorClass, DescriptorNone, DescriptorBool, DescriptorInteger, \
     DescriptorFloat, DescriptorComplex, DescriptorString, DescriptorList
 
-T = TypeVar("T")
-DescriptorType = TypeVar("DescriptorType")
-
-PreRecorder: TypeAlias = Callable[[object], None]
-ClassWriter: TypeAlias = Callable[[T, OutputArchive], PartialRecord]
-DataReader: TypeAlias = Callable[[T, InputArchive, DescriptorClass, int], None]
-ClassReader: TypeAlias = Callable[[InputArchive, ADescriptor, PreRecorder], None]
 
 #########################
 # basic class serializers
 #########################
-
-class ASerializer(ABC, Generic[T, DescriptorType]):
-    """TODO"""
-    type: T
-    class_tag: str
-    descriptor_type: DescriptorType
-
-    @abstractmethod
-    def write(self, obj: T, ar: OutputArchive) -> PartialRecord:
-        """TODO"""
-        pass
-
-    @abstractmethod
-    def read(self, ar: InputArchive, desc: DescriptorType, pre_recorder: PreRecorder) -> T:
-        """TODO"""
-        pass
 
 
 class SerializerBasicType(ASerializer[T, DescriptorType]):
@@ -172,7 +149,21 @@ class SerializerTuple(ASerializer):
 
     def read(self, ar: InputArchive, desc: DescriptorList, pre_recorder: PreRecorder) -> tuple:
         # no child can contain reference to obj, so no need to pre_record
-        return ( * [ ar.create(idx) for idx in desc.value ], )
+        return tuple( ar.create(idx) for idx in desc.value )
+
+
+class SerializerType(ASerializer):
+    type = type
+    class_tag = 'type'
+    descriptor_type = DescriptorString
+
+    def write(self, obj: type, ar: OutputArchive) -> PartialRecord:
+        from .class_registry import ClassRegistry
+        return DescriptorString(ClassRegistry.get_by_class(obj).class_tag), []
+
+    def read(self, ar: InputArchive, desc: DescriptorString, pre_recorder: PreRecorder) -> type:
+        from .class_registry import ClassRegistry
+        return ClassRegistry.get_by_tag(desc.value).type
 
 ############################
 # custom classes serializers

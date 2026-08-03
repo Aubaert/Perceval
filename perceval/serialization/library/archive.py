@@ -109,10 +109,9 @@ class OutputArchive(Archive):
         pass
 
     def to_text(self) -> str:
-        res = f"{self.header} {self.archive_version} {len(self.roots)}" + " ".join(map(str, self.roots)) + f"{len(self.memo)}"
+        res = f"{self.header} {self.archive_version} {len(self.roots)} " + " ".join(map(str, self.roots)) + f" {len(self.memo)}"
         for entry in self.memo:
             tag, desc = entry
-            t = ClassRegistry.get_by_tag(tag)
             res += f" {tag} {desc.to_txt()}"
         return res
 
@@ -152,7 +151,7 @@ class InputArchive(Archive):
             return
         return t.read(self, desc, lambda obj: self.created.__setitem__(index, obj))
 
-    def load_attr(self, obj, desc: list[int]):  # TODO: typing
+    def load_attr(self, obj, desc: list[int]):  # TODO: fix here
         for name, idx in desc:
             setattr(obj, name, self.create(idx))
 
@@ -160,7 +159,7 @@ class InputArchive(Archive):
     def from_json(self):
         pass
 
-    def from_text(self, txt: str) -> None:
+    def from_text(self, txt: str) -> "InputArchive":  # TODO: python 3.11: use Self
         self.roots = []
         self.memo = []
         self.created = []
@@ -186,3 +185,4 @@ class InputArchive(Archive):
             self.memo.append( (tag, desc) )
 
         self.created = [ self.NoValue ] * len(self.memo)
+        return self

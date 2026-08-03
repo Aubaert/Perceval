@@ -27,10 +27,33 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .serialize import serialize, serialize_to_file
-from ._state_serialization import deserialize_state, deserialize_state_list
-from .deserialize import deserialize, deserialize_circuit, circuit_from_file, deserialize_matrix, matrix_from_file, \
-      deserialize_float, deserialize_file
-from .serialize_binary import serialize_binary
-from ._serialization_registrator import register_to_serialization
-from .library import *
+from abc import ABC, abstractmethod
+from typing import TypeVar, Callable, TypeAlias, Generic
+
+from .archive import OutputArchive, InputArchive
+from .descriptors import DescriptorClass, ADescriptor, PartialRecord
+
+T = TypeVar("T")
+DescriptorType = TypeVar("DescriptorType")
+
+PreRecorder: TypeAlias = Callable[[object], None]
+ClassWriter: TypeAlias = Callable[[T, OutputArchive], PartialRecord]
+DataReader: TypeAlias = Callable[[T, InputArchive, DescriptorClass, int], None]
+ClassReader: TypeAlias = Callable[[InputArchive, ADescriptor, PreRecorder], None]
+
+
+class ASerializer(ABC, Generic[T, DescriptorType]):
+    """TODO"""
+    type: T
+    class_tag: str
+    descriptor_type: DescriptorType
+
+    @abstractmethod
+    def write(self, obj: T, ar: OutputArchive) -> PartialRecord:
+        """TODO"""
+        pass
+
+    @abstractmethod
+    def read(self, ar: InputArchive, desc: DescriptorType, pre_recorder: PreRecorder) -> T:
+        """TODO"""
+        pass

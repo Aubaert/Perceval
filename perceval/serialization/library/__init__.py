@@ -31,7 +31,6 @@
 # to add any class to a serialization register. It serializes their data in a reliable way,
 # especially by storing the repetition of objects through their ids
 
-
+from .abstract_serializer import ASerializer
 from .archive import InputArchive, OutputArchive
 from .serialization import Serialization
-from .serializers import ASerializer
