@@ -28,7 +28,7 @@
 # SOFTWARE.
 
 from .abstract_mitigation import AbstractMitigation
-from imperfections import Imperfections
+from .imperfections import Imperfections, update_imperfections_from_results
 from .photon_recycling import photon_recycling, PhotonRecycling
 from .compilation_averaging import CompilationAveraging
 from .distinguishable_photon_mitigation import DistinguishablePhotonMitigation
