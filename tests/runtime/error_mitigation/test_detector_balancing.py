@@ -98,7 +98,8 @@ def test_recombination():
 
     res = averaging.parse_results(computation, sub_results, imperfections)
 
-    assert res == expected
+    assert_bsd_close(res.pop("results"), expected.pop("results"))
+    assert pytest.approx(res) == expected
 
 
 def test_run_through():

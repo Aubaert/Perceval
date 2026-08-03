@@ -30,6 +30,7 @@
 import math
 from copy import copy, deepcopy
 
+from perceval.components import DetectionType, get_detection_type
 from perceval.utils import BSDistribution, FockState, NoiseModel, get_logger
 from perceval.utils.constants import KEY_MAX_SHOTS, KEY_MAX_SAMPLES, KEY_RESULTS
 
@@ -111,7 +112,7 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
                 input_state=state,
                 samples=samples[i],
                 shots=shots[i],
-                job_name=f"{computation.job_name} pem {i}",  # TODO: change name ?
+                job_name=f"{computation.job_name} DPM {i}",
             )
             sub_computations.append(comp)
 
@@ -147,7 +148,8 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
         input_state = computation.experiment.input_state
         order = self._resolve_order(input_state.n)
 
-        pnr_per_mode = [] # TODO: Find a way of getting PNR per mode for Remote & Local computations
+        pnr_per_mode = [d.max_detections if d is not None else None for d in imperfections.detectors][:input_state.m]
+        detection_type = get_detection_type(imperfections.detectors[:input_state.m])
 
         dist_batch = self._extract_distributions(results)
         mitigated = self._mitigate_hom(
@@ -157,6 +159,7 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
             input_state,
             noise.indistinguishability,
             pnr_per_mode,
+            detection_type
         )
         dist_batch[0] = mitigated
 
@@ -167,6 +170,7 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
             input_state,
             noise,
             pnr_per_mode,
+            detection_type
         )
         mitigated.normalize()
 
@@ -290,7 +294,8 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
         state_idx: dict[FockState, int],
         input_state: FockState,
         indistinguishability: float,
-        pnr_per_mode: list[int]
+        pnr_per_mode: list[int | None],
+        detection_type: DetectionType,
     ) -> BSDistribution:
         """Mitigate distinguishability by subtracting contributions where
         photons statistics are independent.
@@ -310,7 +315,9 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
                     [dist_batch[state_idx[state]] for state in cell],
                     merge_modes=True
                 )
-                convolved = apply_detection_filter(convolved, pnr_per_mode)
+                # It could be more efficient to apply this once at the end, both in terms of speed and correctness
+                # This would be at the cost of memory
+                convolved = apply_detection_filter(convolved, pnr_per_mode, detection_type)
                 res += weights_hom[i] * multiplicity * convolved
 
         return res
@@ -323,7 +330,8 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
         idx_by_photon_count: dict[int, list[int]],
         input_state: FockState,
         noise: NoiseModel,
-        pnr_per_mode: list[int]
+        pnr_per_mode: list[int | None],
+        detection_type: DetectionType
     ) -> BSDistribution:
         """Mitigate g2 in computation by subtracting statistics due to extra
         distinguishable photon in lossy subspace.
@@ -351,7 +359,9 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
                 sum(noise_dists, BSDistribution()),
                 merge_modes=True,
             )
-            convolved = apply_detection_filter(convolved, pnr_per_mode)
+            # It could be more efficient to apply this once at the end, both in terms of speed and correctness
+            # This would be at the cost of memory
+            convolved = apply_detection_filter(convolved, pnr_per_mode, detection_type)
             res += weights_g2[i] * convolved
 
         # Filter out g2 states. In theory, there shouldn't be any left, but it's better to be sure about that
