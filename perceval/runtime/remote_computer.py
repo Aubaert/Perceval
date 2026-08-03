@@ -214,7 +214,7 @@ class RemoteComputer(AbstractComputer):
     def _get_imperfections(self, computation: Computation | ComputationIterator) -> Imperfections:
         architecture = self.specs.architecture
         if architecture is not None:
-            detectors = architecture.detectors
+            detectors = architecture.detectors  # TODO: use the perfs to correct the efficiency automatically ?
         else:
             detectors = computation.experiment.detectors  # Supposes the remote can simulate them
         return Imperfections(self.noise, detectors)  # We drop experiment.noise in this case (deprecated anyway)
