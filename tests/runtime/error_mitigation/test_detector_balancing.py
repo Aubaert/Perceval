@@ -28,14 +28,12 @@
 # SOFTWARE.
 
 from copy import copy
-import random
 
-import pytest
 from exqalibur import FockState
 from exqalibur.exqalibur import PostSelect
 
-from perceval import DetectorBalancing, Computation, CommandFactory, Experiment, NoiseModel, Command, BSCount, \
-    apply_min_photons, apply_post_select
+from perceval import (DetectorBalancing, Computation, CommandFactory, Experiment, NoiseModel, apply_min_photons,
+                      apply_post_select, Imperfections, Detector)
 from perceval.runtime.simulated_computer import SimulatedComputer
 from perceval.utils.bsdistribution import BSDistribution
 from perceval.utils.constants import KEY_SHOTS_USED
@@ -76,8 +74,9 @@ def prepare_test():
 
 def test_computation_extension():
     computation = Computation(CommandFactory.samples, Experiment())
+    imperfections = Imperfections(NoiseModel(), [])
     averaging = DetectorBalancing()
-    comp_list = averaging.extend_computation(computation, NoiseModel())
+    comp_list = averaging.extend_computation(computation, imperfections)
 
     assert len(comp_list) == 1
 
@@ -86,15 +85,14 @@ def test_computation_extension():
 
 def test_recombination():
     expected, sub_results = prepare_test()
-    noise = NoiseModel()
-    noise.transmitance_ratios_output = [1., 1.]
+    imperfections = Imperfections(NoiseModel(), [Detector.ppnr(wire_efficiency=0.1)] * 2)
 
     averaging = DetectorBalancing()
 
     computation = Computation(CommandFactory.probs, Experiment(2))
     computation.add_params(max_shots = 50000, max_samples = 10000)
 
-    res = averaging.parse_results(computation, sub_results, noise)
+    res = averaging.parse_results(computation, sub_results, imperfections)
 
     assert res == expected
 
@@ -102,13 +100,12 @@ def test_recombination():
 def test_run_through():
     computer = SimulatedComputer("SLOS")
     computer.mitigations = [ DetectorBalancing() ]
-    noise = NoiseModel()
-    noise.transmitance_ratios_output = [1., .5]
-    computer.noise = noise
 
     e = Experiment(2)
     e.min_detected_photons_filter(1)
     e.with_input(BasicState([1, 0]))
+    e.add(0, Detector.ppnr(wire_efficiency=0.1))
+    e.add(1, Detector.ppnr(wire_efficiency=0.1))
     computation = Computation(CommandFactory.probs, e)
     computation.add_params(max_shots = 50000, max_samples = 10000)
 

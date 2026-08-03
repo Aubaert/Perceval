@@ -33,34 +33,34 @@ import math
 from perceval.utils.logging import get_logger
 
 from .abstract_mitigation import AbstractMitigation
+from .imperfections import Imperfections, update_imperfections_from_results
 from ..computation import Computation
 
-from perceval.utils import NoiseModel
 from perceval.utils.constants import KEY_RESULTS
 
 class DetectorBalancing(AbstractMitigation):
-    # Note: we do not know if it behaves correctly with Feef-Forward
+    """
+    A mitigation process that adjusts the probabilities of each output state based on the output
+    loss and number of photons in each mode.
+    """
 
     APPLY_MIN_PHOTONS = False
     APPLY_LOGICAL_SELECTION = False
 
-    def __init__(self):
-        """
-        A mitigation process that adjusts the probabilities of each output state based on the output
-        loss and number of photons in each mode.
-        """
-
-    def extend_computation(self, computation: Computation, noise: NoiseModel) -> list[Computation]:
+    def extend_computation(self, computation: Computation, imperfections: Imperfections) -> list[Computation]:
         comp = deepcopy(computation)
         comp.command.name = "probs"
         return [comp]
 
-    def _parse_results(self, computation: Computation, results: list[dict], misc: object) -> dict:
-        valids = [math.isfinite(v) and v >= 0. and v <= 1. for v in misc.transmitance_ratios_output]
+    def _parse_results(self, computation: Computation, results: list[dict], imperfections: Imperfections) -> dict:
+        imperfections = update_imperfections_from_results(imperfections, results[0])
+
+        ratios = [d.efficiency if d is not None else 1. for d in imperfections.detectors]
+        valids = [math.isfinite(v) and v >= 0. and v <= 1. for v in ratios]
         if not all(valids):
-            get_logger().warn("Calibrated detector transmitance ratios invalid values, replaced with 1.0.")
-            # raise ValueError("Calibrated detector transmitance ratios invalid values")
-        ratios = [ v if valid else 1. for v, valid in zip(misc.transmitance_ratios_output, valids) ]
+            get_logger().warn("Calibrated detector transmittance ratios invalid values, replaced with 1.0.")
+            # raise ValueError("Calibrated detector transmittance ratios invalid values")
+        ratios = [ v if valid else 1. for v, valid in zip(ratios, valids) ]
 
         if len(ratios) < computation.experiment.m:
             get_logger().warn(

@@ -34,6 +34,7 @@ from perceval.utils import BSDistribution, FockState, NoiseModel, get_logger
 from perceval.utils.constants import KEY_MAX_SHOTS, KEY_MAX_SAMPLES, KEY_RESULTS
 
 from ..computation import Computation
+from .imperfections import Imperfections, update_imperfections_from_results
 from .abstract_mitigation import AbstractMitigation
 from ._helpers.distinguishable_photon_mitigation import (generate_obb_states, apply_detection_filter, filter_extra_photons,
                                                          generate_obb_partition)
@@ -71,12 +72,12 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
     def extend_computation(
         self,
         computation: Computation,
-        noise: NoiseModel
+        imperfections: Imperfections
     ) -> list[Computation]:
         """Add computations for every possible sub-n photon number up to a
         given specified order of correction.
         """
-        noise = computation.experiment.noise or noise
+        noise = imperfections.noise
         if noise.g2 == 0 and noise.indistinguishability == 1:
             return [computation]  # Nothing to mitigate here
 
@@ -120,7 +121,7 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
         self,
         computation: Computation,
         results: list[dict],
-        noise: NoiseModel
+        imperfections: Imperfections
     ) -> dict:
         """Mitigate distinguishability & lossy g2 contributions. Post-select
         out g2 states.
@@ -130,7 +131,11 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
         if len(results) == 1:
             return results[0]
 
-        sub_comps = self.extend_computation(computation, noise)
+        sub_comps = self.extend_computation(computation, imperfections)
+
+        # results[0] is most likely not the median time noise, but it is the one that carries the most information
+        imperfections = update_imperfections_from_results(imperfections, results[0])
+        noise = imperfections.noise
 
         state_idx: dict[FockState, int] = {}
         states_by_photon_count: dict[int, list[int]] = {}
