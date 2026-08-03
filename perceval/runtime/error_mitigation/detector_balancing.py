@@ -28,12 +28,12 @@
 # SOFTWARE.
 
 from copy import deepcopy, copy
-import math
 
-from perceval.utils.logging import get_logger
+from perceval.utils import BSDistribution
+from perceval.simulators._simulate_detectors import compute_distributions
 
 from .abstract_mitigation import AbstractMitigation
-from .imperfections import Imperfections, update_imperfections_from_results
+from .imperfections import Imperfections
 from ..computation import Computation
 
 from perceval.utils.constants import KEY_RESULTS
@@ -43,36 +43,68 @@ class DetectorBalancing(AbstractMitigation):
     A mitigation process that adjusts the probabilities of each output state based on the output
     loss and number of photons in each mode.
     """
+    # Hypotheses for this mitigation to work:
+    #   - the detectors only model photon losses (no dark count)
+    #   - the detectors act independently for each state (no dependency between states)
+    # They are verified by all the detectors models in perceval version 1.3
+    # The closer a detector's model is to it's true behavior, the better the correction will be
+    # One last hypothesis:
+    #   - all states are represented in the results (i.e. bunched states are also represented)
+    # Not fulfilling this hypothesis will make the maths wrong, but it should still be better than without mitigation
+
 
     APPLY_MIN_PHOTONS = False
-    APPLY_LOGICAL_SELECTION = False
+    APPLY_LOGICAL_SELECTION = True  # Actually, all we need is "at least", but it's easier to remove everything
 
     def extend_computation(self, computation: Computation, imperfections: Imperfections) -> list[Computation]:
+        detectors = imperfections.detectors
+        assert len(detectors) >= computation.experiment.circuit_size
+
         comp = deepcopy(computation)
         comp.command.name = "probs"
+
+        comp.experiment.remove_all_ports()
+        comp.experiment.clear_postselection()
         return [comp]
 
     def _parse_results(self, computation: Computation, results: list[dict], imperfections: Imperfections) -> dict:
-        imperfections = update_imperfections_from_results(imperfections, results[0])
+        detectors = imperfections.detectors[:computation.experiment.circuit_size]
 
-        ratios = [d.efficiency if d is not None else 1. for d in imperfections.detectors]
-        valids = [math.isfinite(v) and v >= 0. and v <= 1. for v in ratios]
-        if not all(valids):
-            get_logger().warn("Calibrated detector transmittance ratios invalid values, replaced with 1.0.")
-            # raise ValueError("Calibrated detector transmittance ratios invalid values")
-        ratios = [ v if valid else 1. for v, valid in zip(ratios, valids) ]
+        res_by_n = []
+        for state, prob in results[0][KEY_RESULTS].items():
+            for _ in range(state.n + 1 - len(res_by_n)):
+                res_by_n.append({})
+            res_by_n[state.n][state] = prob
 
-        if len(ratios) < computation.experiment.m:
-            get_logger().warn(
-                "Not enough loss ratio for DetectorBalancing: "
-                "defaulting missing ones to 1."
-            )
-            ratios.extend([1.] * (computation.experiment.m - len(ratios)))
+        final_res = BSDistribution()
+        for n in range(len(res_by_n) - 1, -1, -1):
+            for state in res_by_n[n].keys():
+                distributions = compute_distributions(state, detectors, {})
+
+                # prob threshold ?
+                state_dist = BSDistribution.list_tensor_product(distributions)
+
+                # If we were able to detect state, it means that the detectors model should have state in its results
+                if state not in state_dist:
+                    raise RuntimeError(f"Measured state {state} can't be obtained through the detectors model. "
+                                       "Are the detectors the ones that were used to obtain this distribution?")
+
+                # At this stage, p_measured = p_theoretical * p_detection
+                res_by_n[n][state] /= state_dist[state]
+
+                state_prob = res_by_n[n][state]
+                for sub_state, sub_prob in state_dist.items():
+                    # For sub states, p_measured(sub_state) = ... + p_theoretical(state) * p_detection(sub_state | state)
+                    if sub_state != state and sub_state in res_by_n[sub_state.n]:
+                        res_by_n[sub_state.n][sub_state] -= sub_prob * state_prob
+                        if res_by_n[sub_state.n][sub_state] <= 0:
+                            del res_by_n[sub_state.n][sub_state]
+
+                final_res[state] = state_prob
+
+        final_res.normalize()
 
         res = copy(results[0])  # We are going to modify this to keep custom fields as much as we can
-        #TODO: check what happens if there are less photons than in the input state
-        for k in res[KEY_RESULTS].keys():
-            res[KEY_RESULTS][k] /= math.prod([ratios[k.photon2mode(i)] for i in range(k.n)])
-        res[KEY_RESULTS].normalize()
+        res[KEY_RESULTS] = final_res
 
         return res
