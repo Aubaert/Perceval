@@ -160,7 +160,7 @@ class DescriptorList(ADescriptor):
 
 
 class DescriptorClass(ADescriptor):
-    def __init__(self, version: int, members: list):
+    def __init__(self, version: int, members: list[tuple[str, int]]):
         self.value = (version, members)
 
     def to_txt(self) -> str:

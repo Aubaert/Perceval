@@ -28,6 +28,7 @@
 # SOFTWARE.
 
 import warnings
+from typing import Iterable, Any
 
 from .descriptors import DescriptorClass, PartialRecord
 from .class_registry import ClassRegistry
@@ -100,8 +101,8 @@ class OutputArchive(Archive):
         return (DescriptorClass(t.class_version, [ (name, self.get_index(value)) for name, value in zip(attributes, children) ]),
                 children)
 
-    def pre_record(self, children: list[int]):
-        self.ids.extend( [ id(c) for c in children if id(c) not in self.ids ] )
+    def pre_record(self, children: Iterable[Any]):
+        self.ids.extend( { id(c) for c in children if id(c) not in self.ids } )  # Use set to avoid repeated objects
         self.memo.extend( [ self.NoValue ] * (len(self.ids) - len(self.memo)) )
 
     # To storable object
@@ -151,15 +152,19 @@ class InputArchive(Archive):
             return
         return t.read(self, desc, lambda obj: self.created.__setitem__(index, obj))
 
-    def load_attr(self, obj, desc: list[int]):  # TODO: fix here
+    def load_attr(self, obj, desc: list[tuple[str, int]]):
         for name, idx in desc:
             setattr(obj, name, self.create(idx))
 
     # Storable object parsing
-    def from_json(self):
+    @classmethod
+    def from_json(cls):
+        # TODO
         pass
 
-    def from_text(self, txt: str) -> "InputArchive":  # TODO: python 3.11: use Self
+    @classmethod
+    def from_text(cls, txt: str) -> "InputArchive":  # TODO: python 3.11: use Self
+        self = cls()
         self.roots = []
         self.memo = []
         self.created = []

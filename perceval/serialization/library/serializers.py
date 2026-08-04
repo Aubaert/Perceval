@@ -165,6 +165,29 @@ class SerializerType(ASerializer):
         from .class_registry import ClassRegistry
         return ClassRegistry.get_by_tag(desc.value).type
 
+
+class SerializerSet(ASerializer):
+    type = set
+    class_tag = 'set'
+    descriptor_type = DescriptorList
+
+    def write(self, obj: set, ar: OutputArchive) -> PartialRecord:
+        # Sets can't directly contain themselves, but a member could contain it
+        ar.pre_record(obj)
+
+        return DescriptorList([ar.get_index(v) for v in obj]), list(obj)
+
+    def read(self, ar: InputArchive, desc: DescriptorList, pre_recorder: PreRecorder) -> set:
+        obj = set()
+        # first record empty list so children can point to it
+        pre_recorder(obj)
+
+        for child in desc.value:
+            obj.add(ar.create(child))
+
+        return obj
+
+
 ############################
 # custom classes serializers
 ############################

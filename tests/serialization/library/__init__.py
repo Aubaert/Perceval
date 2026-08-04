@@ -26,34 +26,3 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-from abc import ABC, abstractmethod
-from typing import TypeVar, Callable, TypeAlias, Generic
-
-from .archive import OutputArchive, InputArchive
-from .descriptors import ADescriptor, PartialRecord
-
-T = TypeVar("T")
-DescriptorType = TypeVar("DescriptorType")
-
-PreRecorder: TypeAlias = Callable[[object], None]
-ClassWriter: TypeAlias = Callable[[T, OutputArchive], PartialRecord]
-DataReader: TypeAlias = Callable[[T, InputArchive, list[tuple[str, int]], int], None]
-ClassReader: TypeAlias = Callable[[InputArchive, ADescriptor, PreRecorder], None]
-
-
-class ASerializer(ABC, Generic[T, DescriptorType]):
-    """TODO"""
-    type: T
-    class_tag: str
-    descriptor_type: DescriptorType
-
-    @abstractmethod
-    def write(self, obj: T, ar: OutputArchive) -> PartialRecord:
-        """TODO"""
-        pass
-
-    @abstractmethod
-    def read(self, ar: InputArchive, desc: DescriptorType, pre_recorder: PreRecorder) -> T:
-        """TODO"""
-        pass
