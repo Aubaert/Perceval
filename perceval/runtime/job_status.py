@@ -31,6 +31,7 @@ from __future__ import annotations  # Python 3.11 : Replace using Self typing
 from enum import Enum
 from time import time
 
+from perceval.serialization import DescriptorInteger, Serialization
 from perceval.utils.logging import get_logger, channel
 
 
@@ -347,3 +348,22 @@ class JobStatus:
         res._stop_message = current_maximum_status._stop_message
 
         return res
+
+
+Serialization.register_class(
+    RunningStatus,
+    class_write_custom=lambda status, ar: (DescriptorInteger(status.value), []),
+    class_read_custom=lambda ar, desc, pre_recorder: RunningStatus(desc.value),
+    descriptor_type=DescriptorInteger,
+)
+Serialization.register_class(
+    JobStatus, ["_status",
+                "_init_time_start",
+                "_running_time_start",
+                "_duration",
+                "_completed_time",
+                "_running_progress",
+                "_running_phase",
+                "_stop_message",
+                ],
+)

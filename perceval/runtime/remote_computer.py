@@ -45,6 +45,7 @@ from .payload_generator import PayloadGenerator
 from perceval.utils import perf_dict_to_noise, ProgressCallback, NoiseModel, PostSelect, ContextManager
 from perceval.utils.logging import channel, get_logger
 from perceval.components import PortLocation, Experiment
+from perceval.serialization import Serialization, InputArchive
 
 
 class _RemoteGetter(AsyncGetter):
@@ -362,3 +363,21 @@ class RemoteComputer(AbstractComputer):
         """
         p_interest = self._estimate_sample_probability(computation, param_values=param_values)
         return round(nshots * p_interest)
+
+
+def _load_remote_getter(getter: _RemoteGetter, archive: InputArchive, members, version: int):
+    if version != 0:
+        raise RuntimeError(f"Unsupported _RemoteGetter serialization version {version}")
+    archive.load_attr(getter, members)
+    getter._communication_layer = None
+    getter._last_status_refresh = 0.
+    getter._job_status_errors = 0
+
+
+Serialization.register_class(
+    _RemoteGetter,
+    class_serial_members_write=lambda getter, archive: archive.save_attr(
+        getter, ["_remote_id", "_results", "_status"]
+    ),
+    class_serial_members_read=_load_remote_getter,
+)

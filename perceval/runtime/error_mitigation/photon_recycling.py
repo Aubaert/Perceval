@@ -36,6 +36,7 @@ from scipy.optimize import curve_fit
 from perceval.components import PortLocation
 from perceval.utils import BSCount, BSDistribution, BasicState, SVDistribution, NoiseModel, PostSelect
 from perceval.utils.logging import get_logger, channel
+from perceval.serialization import Serialization
 
 from ..computation import Computation
 from .abstract_mitigation import AbstractMitigation
@@ -174,3 +175,6 @@ class PhotonRecycling(AbstractMitigation):
             pass
 
         return res
+
+
+Serialization.register_class(PhotonRecycling, [])
