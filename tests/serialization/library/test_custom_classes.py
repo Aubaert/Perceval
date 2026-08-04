@@ -56,7 +56,7 @@ def test_data_class():
     ar = OutputArchive()
     Serialization.serialize(a, ar)
 
-    assert ar.to_text() == "pcvlar 0 1 0 4 A_data 42 3 a 1 b 2 c 3 int 10 int 20 int 30"
+    assert ar.to_text() == "pcvlar 0 1 0 A_data 42 3 a 1 b 2 c 3 int 10 int 20 int 30"
 
     deser = InputArchive.from_text(ar.to_text())
     assert Serialization.deserialize(deser) == a
@@ -75,7 +75,7 @@ def test_data_class():
     ar = OutputArchive()
     Serialization.serialize(a, ar)
 
-    assert ar.to_text() == "pcvlar 0 1 0 4 B_test 420 2 a 1 b 2 float 3.14 list 1 3 str 4 test"
+    assert ar.to_text() == "pcvlar 0 1 0 B_test 420 2 a 1 b 2 float 3.14 list 1 3 str 4 test"
 
     deser = InputArchive.from_text(ar.to_text())
     assert Serialization.deserialize(deser) == a
@@ -129,13 +129,13 @@ def test_data_split():
     ar = OutputArchive()
     Serialization.serialize(a, ar)
 
-    assert ar.to_text() == f"pcvlar 0 1 0 3 {A.class_tag} {A.class_version} 2 a 1 _b 2 float 3.14 int 2"
+    assert ar.to_text() == f"pcvlar 0 1 0 {A.class_tag} {A.class_version} 2 a 1 _b 2 float 3.14 int 2"
 
     deser = InputArchive.from_text(ar.to_text())
     assert Serialization.deserialize(deser) == a
 
     # Now, suppose we have the serialization from version 0
-    old_serialized = f"pcvlar 0 1 0 3 {A.class_tag} 0 2 a 1 b 2 float 3.14 int 3"
+    old_serialized = f"pcvlar 0 1 0 {A.class_tag} 0 2 a 1 b 2 float 3.14 int 3"
     deser = InputArchive.from_text(old_serialized)
     assert Serialization.deserialize(deser) == a
 
@@ -171,13 +171,13 @@ def test_data_split():
     ar = OutputArchive()
     Serialization.serialize(a, ar)
 
-    assert ar.to_text() == f"pcvlar 0 1 0 3 {B_tag} 1 2 a 1 _b 2 float 3.14 int 2"
+    assert ar.to_text() == f"pcvlar 0 1 0 {B_tag} 1 2 a 1 _b 2 float 3.14 int 2"
 
     deser = InputArchive.from_text(ar.to_text())
     assert Serialization.deserialize(deser) == a
 
     # Now, suppose we have the serialization from version 0
-    old_serialized = f"pcvlar 0 1 0 3 {B_tag} 0 2 a 1 b 2 float 3.14 int 3"
+    old_serialized = f"pcvlar 0 1 0 {B_tag} 0 2 a 1 b 2 float 3.14 int 3"
     deser = InputArchive.from_text(old_serialized)
     assert Serialization.deserialize(deser) == a
 
@@ -214,7 +214,7 @@ def test_class():
     ar = OutputArchive()
     Serialization.serialize(a, ar)
 
-    assert ar.to_text() == f"pcvlar 0 1 0 1 {A.class_tag} 4 test"
+    assert ar.to_text() == f"pcvlar 0 1 0 {A.class_tag} 4 test"
 
     deser = InputArchive.from_text(ar.to_text())
     assert Serialization.deserialize(deser) == a
@@ -237,7 +237,7 @@ def test_class():
     a = B("test b")
     ar = OutputArchive()
     Serialization.serialize(a, ar)
-    assert ar.to_text() == f"pcvlar 0 1 0 1 B_class 6 test b"
+    assert ar.to_text() == f"pcvlar 0 1 0 B_class 6 test b"
 
     deser = InputArchive.from_text(ar.to_text())
     assert Serialization.deserialize(deser) == a

@@ -27,34 +27,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-class StringBuffer:
-    def __init__(self, value: str):
-        self.s = value
-        self.current = 0
+from zlib import compress as zlib_compress, decompress as zlib_decompress
+from base64 import b64encode, b64decode
 
-    def is_empty(self) -> bool:
-        return self.current >= len(self.s)
 
-    def get_next(self) -> str:
-        start = self.current
-        end = self.s.find(' ', start)
-        if end == -1: end = len(self.s)
-        self.current = end + 1
-        return self.s[start:end]
+def b64encoding(obj: bytes) -> str:
+    return b64encode(obj).decode('utf-8')
 
-    def get_until_next_token(self, token: str) -> str:
-        start = self.current
-        end = self.s.find(token, start)
-        if end == -1: raise RuntimeError(f"Missing token '{token}' in archive")
-        end += len(token)
-        self.current = end + 1
-        return self.s[start:end]
 
-    def get_n(self, n: int) -> str:
-        start = self.current
-        end = start + n
-        self.current = end + 1
-        return self.s[start:end]
+def compress_str(obj: str):
+    serialized_string_compressed = zlib_compress(obj.encode('utf-8'))  # Compress byte to byte
+    return b64encoding(serialized_string_compressed)  # base64 to string
 
-    def get_int(self) -> int:
-        return int(self.get_next())
+
+def decompress_str(obj: str):
+    obj = b64decode(obj)
+    return zlib_decompress(obj).decode('utf-8')

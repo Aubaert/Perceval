@@ -33,6 +33,8 @@ from typing import Iterable, Any
 from .descriptors import DescriptorClass, PartialRecord
 from .class_registry import ClassRegistry
 from .string_buffer import StringBuffer
+from .utils import b64encoding, compress_str, decompress_str
+
 
 class Archive:
 
@@ -102,18 +104,26 @@ class OutputArchive(Archive):
                 children)
 
     def pre_record(self, children: Iterable[Any]):
-        self.ids.extend( { id(c) for c in children if id(c) not in self.ids } )  # Use set to avoid repeated objects
+        for c in children:
+            # Avoid comprehension to prevent repeated objects
+            if id(c) not in self.ids:
+                self.ids.append(id(c))
+
         self.memo.extend( [ self.NoValue ] * (len(self.ids) - len(self.memo)) )
 
     # To storable object
     def to_json(self):
         pass
 
-    def to_text(self) -> str:
-        res = f"{self.header} {self.archive_version} {len(self.roots)} " + " ".join(map(str, self.roots)) + f" {len(self.memo)}"
+    def to_text(self, compress: bool = False) -> str:
+        res = f" {self.archive_version} {len(self.roots)} " + " ".join(map(str, self.roots))
         for entry in self.memo:
             tag, desc = entry
             res += f" {tag} {desc.to_txt()}"
+        if compress:
+            res = f":zip:{compress_str(res)}"
+
+        res = f"{self.header}" + res
         return res
 
 
@@ -164,6 +174,10 @@ class InputArchive(Archive):
 
     @classmethod
     def from_text(cls, txt: str) -> "InputArchive":  # TODO: python 3.11: use Self
+        compress_header = f"{InputArchive.header}:zip:"
+        if txt.startswith(compress_header):
+            txt = f"{InputArchive.header}{decompress_str(txt[len(compress_header):])}"
+
         self = cls()
         self.roots = []
         self.memo = []
@@ -182,8 +196,7 @@ class InputArchive(Archive):
         n_roots = buffer.get_int()
         self.roots = [ buffer.get_int() for _ in range(n_roots) ]
 
-        n_memo = buffer.get_int()
-        for _ in range(n_memo):
+        while not buffer.is_empty():
             tag = buffer.get_next()
             t = ClassRegistry.get_by_tag(tag)
             desc = t.descriptor_type.from_txt(buffer)
