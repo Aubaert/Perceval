@@ -34,7 +34,7 @@ from .class_registry import ClassRegistry
 from .serializers import ClassWriter, DataReader, ClassReader, DescriptorType, ASerializer, SerializerNone, \
     SerializerBool, create_data_serializer, create_data_split_serializer, create_custom_class_serializer, \
     SerializerInt, SerializerFloat, SerializerComplex, SerializerStr, SerializerList, SerializerDict, \
-    SerializerTuple, T, SerializerType, SerializerSet
+    SerializerTuple, T, SerializerType, SerializerSet, SerializerBytes
 
 
 class Serialization:
@@ -118,6 +118,7 @@ ClassRegistry.register(SerializerInt())
 ClassRegistry.register(SerializerFloat())
 ClassRegistry.register(SerializerComplex())
 ClassRegistry.register(SerializerStr())
+ClassRegistry.register(SerializerBytes())
 ClassRegistry.register(SerializerList())
 ClassRegistry.register(SerializerDict())
 ClassRegistry.register(SerializerTuple())

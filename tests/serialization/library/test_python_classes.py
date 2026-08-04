@@ -66,6 +66,12 @@ def test_basic_objects():
     assert ar.roots == [ 0, 1, 2, 3, 4 ]
     assert ar.to_text() == "pcvlar 0 5 0 1 2 3 4 int 12 None  str 5 Hello float 3.14 complex 0.5 0.8660254037844386"
 
+    a6 = b"0x42"
+    Serialization.serialize(a6, ar)
+    assert ar.memo_decoded() == [ ('int', 12), ('None', None), ('str', "Hello"), ('float', 3.14), ('complex', (0.5+0.8660254037844386j)), ('bytes', b"0x42") ]
+    assert ar.roots == [ 0, 1, 2, 3, 4, 5 ]
+    assert ar.to_text() == "pcvlar 0 6 0 1 2 3 4 5 int 12 None  str 5 Hello float 3.14 complex 0.5 0.8660254037844386 bytes 8 MHg0Mg=="
+
     # Test read
     deser_ar = InputArchive.from_text(ar.to_text())
     assert ar.memo_decoded() == deser_ar.memo_decoded()
@@ -76,6 +82,7 @@ def test_basic_objects():
     assert Serialization.deserialize(deser_ar) == a3
     assert Serialization.deserialize(deser_ar) == a4
     assert Serialization.deserialize(deser_ar) == a5
+    assert Serialization.deserialize(deser_ar) == a6
 
 
 def test_python_list():

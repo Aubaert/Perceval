@@ -80,7 +80,7 @@ class DescriptorBinary(ADescriptor):
         self.value = b
 
     def to_txt(self) -> str:
-        s = base64.b64encode(self.value)
+        s = base64.b64encode(self.value).decode("utf-8")
         return f"{len(s)} {s}"
 
     @staticmethod

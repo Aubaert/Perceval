@@ -33,7 +33,7 @@ from typing import Type, Generic
 from .abstract_serializer import ASerializer, T, DescriptorType, PreRecorder, ClassWriter, DataReader, ClassReader
 from .archive import InputArchive, OutputArchive
 from .descriptors import PartialRecord, DescriptorClass, DescriptorNone, DescriptorBool, DescriptorInteger, \
-    DescriptorFloat, DescriptorComplex, DescriptorString, DescriptorList
+    DescriptorFloat, DescriptorComplex, DescriptorString, DescriptorList, DescriptorBinary
 
 
 #########################
@@ -83,6 +83,12 @@ class SerializerStr(SerializerBasicType[complex, DescriptorComplex]):
     type = str
     class_tag = 'str'
     descriptor_type = DescriptorString
+
+
+class SerializerBytes(SerializerBasicType[bytes, DescriptorBinary]):
+    type = bytes
+    class_tag = 'bytes'
+    descriptor_type = DescriptorBinary
 
 
 class SerializerList(ASerializer):

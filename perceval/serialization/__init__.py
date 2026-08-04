@@ -33,3 +33,9 @@ from .deserialize import deserialize, deserialize_circuit, circuit_from_file, de
       deserialize_float, deserialize_file
 from .serialize_binary import serialize_binary
 from .library import *
+from ._archive_serialization import (
+    register_perceval_serializers as _register_perceval_serializers,
+)
+
+_register_perceval_serializers()
+del _register_perceval_serializers
