@@ -32,6 +32,8 @@ PCVL_PREFIX = f"{SEP}PCVL{SEP}"
 ZIP_PREFIX = f"{PCVL_PREFIX}zip{SEP}"
 
 MATRIX_TAG = "Matrix"
+MATRIXN_TAG = "MatrixN"
+MATRIXS_TAG = "MatrixS"
 CIRCUIT_TAG = "ACircuit"
 COMPONENT_TAG = "Component"
 EXPERIMENT_TAG = "Experiment"
