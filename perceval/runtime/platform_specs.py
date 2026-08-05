@@ -29,7 +29,6 @@
 
 from typing import Any
 
-from serialization import InputArchive, DescriptorList, PreRecorder
 from .command import Command, CommandFactory
 from perceval.serialization import Serialization
 from perceval.serialization.library.serializers import SerializerDict
