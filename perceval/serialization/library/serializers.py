@@ -125,7 +125,7 @@ class SerializerDict(ASerializer):
         return DescriptorList([ar.get_index(c) for c in keys_then_values]), keys_then_values
 
     def read(self, ar: InputArchive, desc: DescriptorList, pre_recorder: PreRecorder) -> dict:
-        obj = {}
+        obj = self.type()  # Allows inheriting from this class, as long as the type acts as a dict
         # first record empty dict so children can point to it
         pre_recorder(obj)
 

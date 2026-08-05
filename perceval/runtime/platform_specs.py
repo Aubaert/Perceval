@@ -29,7 +29,10 @@
 
 from typing import Any
 
+from serialization import InputArchive, DescriptorList, PreRecorder
 from .command import Command, CommandFactory
+from perceval.serialization import Serialization
+from perceval.serialization.library.serializers import SerializerDict
 from perceval.utils import FockState, deprecated, ProcessorType
 from perceval.utils.logging import channel, get_logger
 from perceval.components import Experiment, ACircuit, Detector
@@ -314,3 +317,11 @@ class PlatformSpecs(dict):
         assert isinstance(value, ProcessorType)
         # Store as a str so we can serialize it easily
         self["type"] = "simulator" if value == ProcessorType.SIMULATOR else "qpu"
+
+
+class SerializerSpecs(SerializerDict):
+    type = PlatformSpecs
+    class_tag = "Specs"
+
+
+Serialization.register(SerializerSpecs())
