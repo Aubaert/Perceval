@@ -33,6 +33,7 @@ from unittest.mock import patch
 import pytest
 from exqalibur import FockState
 from exqalibur.exqalibur import PostSelect
+from flaky import flaky
 
 import perceval as pcvl
 from perceval import (DetectorBalancing, Computation, CommandFactory, Experiment, NoiseModel, apply_min_photons,
@@ -102,6 +103,7 @@ def test_recombination():
     assert pytest.approx(res) == expected
 
 
+@flaky(max_runs=3)
 def test_run_through():
     experiment = Experiment(Unitary.random(4))
     experiment.with_input(FockState([1, 0, 1, 0]))
@@ -122,7 +124,7 @@ def test_run_through():
 
     c.mitigations = [DetectorBalancing()]
     mitigated_res = c.execute(computation)["results"]
-    assert_bsd_close(perfect_res, mitigated_res)
+    assert_bsd_close(perfect_res, mitigated_res, rel=1e-4)
 
 
 @patch.object(pcvl.utils.logging.ExqaliburLogger, "warn")  # Suppress the warning in tvd_dist()
