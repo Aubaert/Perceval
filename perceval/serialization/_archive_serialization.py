@@ -118,6 +118,7 @@ def register_perceval_serializers() -> None:
     _register_binary(Detector, DETECTOR_TAG, serialize_detector, deserialize_detector)
 
     # Use the str representation for these
+    # Register these using new Descriptors to avoid writing size ? Remove outlets |> or {} ?
     _register_string(FockState, FS_TAG, serialize_state, deserialize_state)
     _register_string(NoisyFockState, NFS_TAG, serialize_state, deserialize_state)
     _register_string(AnnotatedFockState, AFS_TAG, serialize_state, deserialize_state)

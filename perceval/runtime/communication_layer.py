@@ -34,7 +34,7 @@ from typing import TypeVar, Type
 
 from requests import HTTPError
 
-from perceval.serialization import InputArchive, Serialization, deserialize, serialize
+from perceval.serialization import InputArchive, Serialization, deserialize, serialize, OutputArchive
 from perceval.utils.constants import KEY_JOB_NAME, KEY_JOB_CONTEXT, KEY_RESULT_MAPPING, \
     KEY_MAPPING_PARAMETERS, KEY_RESULTS_LIST, KEY_ITERATION, KEY_RESULTS, KEY_PLATFORM_NAME, KEY_JOB_GROUP_NAME, \
     KEY_COMMAND, KEY_MAX_SHOTS, KEY_MAX_SAMPLES
@@ -182,6 +182,12 @@ class RPCBasedCommunicationLayer(CommunicationLayer):
             # we only needs the argument to have "available_commands" when downgrading to version 1
             # This might not be true anymore if we introduce a version 3 someday
             payload = PayloadUpdater.update_payload(payload, self._specs, target_payload_version=1)
+
+        else:
+            # We serialize the payload here, using the new serialization system - Needed to serialize Computation
+            archive = OutputArchive()
+            Serialization.serialize(payload, archive)
+            payload = archive.to_text()  # Use other format ? Compress ?
 
         global_data = PayloadGenerator.generate_global_data(payload,
                                                             {KEY_PLATFORM_NAME: self._rpc_handler.name,
