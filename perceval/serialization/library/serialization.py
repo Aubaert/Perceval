@@ -41,11 +41,15 @@ class Serialization:
 
     @staticmethod
     def serialize(obj, ar: OutputArchive):
+        """Adds obj to the output archive, marking it as a root object"""
         ar.add(obj)
         ar.roots.append(ar.get_index(obj))
 
     @staticmethod
     def deserialize(ar: InputArchive):
+        """Deserializes the next root object in the input archive, and returns it
+
+        :raise RuntimeError: if all the roots have been deserialized."""
         if not ar.roots:
             raise RuntimeError("No object in Archive")
         return ar.create(ar.roots.pop(0))
@@ -86,7 +90,10 @@ class Serialization:
 
     @staticmethod
     def register_class(*args, **kwargs) -> None:
-        """Entry point for registering a class to be able to serialize/deserialize it"""
+        """
+        Entry point for registering a class to be able to serialize/deserialize it.
+        Chooses and uses one of the forms ``data``, ``data_split``, and ``custom_class``
+        depending on what is inside the class and the given arguments """
         errors = [f"Cannot create serializer for class {args[0]}"]
         try:
             Serialization.register_data(*args, **kwargs)

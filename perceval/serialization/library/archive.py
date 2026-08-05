@@ -95,6 +95,13 @@ class OutputArchive(Archive):
             self.add(t)
 
     def save_attr(self, obj, attributes: list[str]) -> PartialRecord:
+        """
+        Adds all the given attributes of obj to the archive.
+
+        :param obj: The object that is currently being added to the archive
+        :param attributes: A list of attributes of the object that will be added to the archive
+        :return: A PartialRecord, i.e. a descriptor and a list of all new objects to add to the archive.
+        """
         t = ClassRegistry.get_by_class(type(obj))
         children = [ getattr(obj, m) for m in attributes ]
 
@@ -116,6 +123,10 @@ class OutputArchive(Archive):
         pass
 
     def to_text(self, compress: bool = False) -> str:
+        """
+        :param compress: If True, the resulting string will be compressed
+        :return: A string representing all the data stored in the archive
+        """
         res = f" {self.archive_version} {len(self.roots)} " + " ".join(map(str, self.roots))
         for entry in self.memo:
             tag, desc = entry
@@ -141,9 +152,16 @@ class InputArchive(Archive):
         return res
 
     def __len__(self) -> int:
+        """
+        :return: the number of roots remaining to be deserialized
+        """
         return len(self.roots)
 
     def create(self, index: int) -> object:
+        """
+        :param index: The index of the object to create in the archive
+        :return: The object that was created in the archive
+        """
         if index < 0 or index >= len(self.memo):
             raise IndexError(f"invalid object index {index} (memo len: {len(self.memo)})")
 
@@ -163,6 +181,11 @@ class InputArchive(Archive):
         return t.read(self, desc, lambda obj: self.created.__setitem__(index, obj))
 
     def load_attr(self, obj, desc: list[tuple[str, int]]):
+        """
+        Creates and loads as attributes all the objects described in `desc` into `obj`.
+        :param obj: The object that will receive the attributes.
+        :param desc: A list of pairs (attribute_name, index)
+        """
         for name, idx in desc:
             setattr(obj, name, self.create(idx))
 
@@ -174,6 +197,10 @@ class InputArchive(Archive):
 
     @classmethod
     def from_text(cls, txt: str) -> "InputArchive":  # TODO: python 3.11: use Self
+        """
+        :param txt: a string representing an archive, typically obtained by using an OutputArchive.to_txt() method.
+        :return: A new InputArchive containing the data that were stored in the archive.
+        """
         compress_header = f"{InputArchive.header}:zip:"
         if txt.startswith(compress_header):
             txt = f"{InputArchive.header}{decompress_str(txt[len(compress_header):])}"
