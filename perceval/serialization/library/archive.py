@@ -51,6 +51,9 @@ class Archive:
 
 
 class OutputArchive(Archive):
+    """
+    Archive used to serialize objects
+    """
     def __init__(self, raise_on_unregistred_class: bool = True):
         super().__init__(raise_on_unregistred_class)
         self.ids = []
@@ -139,6 +142,9 @@ class OutputArchive(Archive):
 
 
 class InputArchive(Archive):
+    """
+    Archive used to deserialize objects
+    """
     def __init__(self, raise_on_unregistred_class: bool = True):
         super().__init__(raise_on_unregistred_class)
         self.created = []
