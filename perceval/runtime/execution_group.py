@@ -408,6 +408,9 @@ class ExecutionGroup:
         """
         Launches up to concurrent_execution_count executions and returns without waiting for execution completion.
 
+        Beware that local executions that are not finished will have to be started from scratch again if the scripts stops.
+        In that case, use ``track_progress()`` to block, or launch your executions using ``run_sequential()`` or ``run_parallel()``.
+
         :param concurrent_execution_count: maximum number of concurrent executions.
          If not specified, the maximum number allowed by the computers is launched.
         """
@@ -436,6 +439,11 @@ class ExecutionGroup:
                                          concurrent_execution_count: int | None = None) -> None:
         """
         Relaunches up to concurrent_execution_count failed executions and returns without waiting for execution completion.
+
+
+        Beware that local executions that are not finished will have to be started from scratch again if the scripts stops.
+        In that case, use ``track_progress()`` to block,
+        or launch your executions using ``rerun_failed_sequential()`` or ``rerun_failed_parallel()``.
 
         :param concurrent_execution_count: maximum number of concurrent executions.
          If not specified, the maximum number allowed by the computers is used.
