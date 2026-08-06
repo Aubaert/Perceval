@@ -86,6 +86,14 @@ class Execution:
         return None
 
     @property
+    def computation(self) -> Computation | ComputationIterator:
+        return self._computation
+
+    @property
+    def computer(self) -> AbstractComputer:
+        return self._computer
+
+    @property
     def name(self) -> str:
         """
         The job name
@@ -99,11 +107,11 @@ class Execution:
         self._name = new_name
 
     @property
-    def job_group_name(self) -> str:
+    def job_group_name(self) -> str | None:
         """
-        The job name
+        The job group name
         """
-        return self._name
+        return self._job_group_name
 
     @job_group_name.setter
     def job_group_name(self, new_name: str):
