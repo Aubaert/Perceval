@@ -516,7 +516,7 @@ class ExecutionGroup:
         return results
 
 
-ExecutionGroup.change_storage_path(".")
+ExecutionGroup.change_storage_path(".")  # Use a ./perceval_data folder ?
 
 
 def _save_execution_group(group: ExecutionGroup, archive: OutputArchive):

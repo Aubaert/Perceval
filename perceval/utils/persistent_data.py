@@ -38,6 +38,8 @@ from .versions import PMetadata
 from ._enums import FileFormat
 
 _CONFIG_FILE_NAME = "config.json"
+
+# Keep execution_group and job_group ? The only use is an exclusion for the clear_all_data() method
 SUB_DIRECTORIES = ['logs', 'job_group', 'execution_groups']
 
 class PersistentData:
@@ -156,7 +158,7 @@ class PersistentData:
         :param data: data to write
         """
         if file_format != FileFormat.BINARY and file_format != FileFormat.TEXT:
-            raise NotImplementedError(f"format {format} is not supported")
+            raise NotImplementedError(f"format {file_format} is not supported")
         if self.is_writable():
             file_path = self.get_full_path(filename)
             try:
@@ -195,7 +197,7 @@ class PersistentData:
                 data = str(file.read())
             data = data.removesuffix('\n').rstrip()
         else:
-            raise NotImplementedError(f"format {format} is not supported")
+            raise NotImplementedError(f"format {file_format} is not supported")
         return data
 
     def load_config(self) -> dict:
