@@ -30,6 +30,7 @@
 import os
 import time
 from datetime import datetime
+from pathlib import Path
 
 from tqdm import tqdm
 
@@ -42,7 +43,7 @@ from .execution_status import RunningStatus
 
 
 FILE_EXT_EGRP = "egrp"
-EGRP_DIR_NAME = "execution_group"
+EGRP_DIR_NAME = "execution_groups"
 
 
 class ExecutionGroup:
@@ -60,8 +61,8 @@ class ExecutionGroup:
     :param name: Name uniquely identifying the group on disk.
     """
 
-    _PERSISTENT_DATA = PersistentData()
-    _DIR_PATH = _PERSISTENT_DATA.create_sub_directory(EGRP_DIR_NAME)
+    _PERSISTENT_DATA: PersistentData
+    _DIR_PATH: str
     STATUS_REFRESH_DELAY = 5
 
     def __init__(self, name: str):
@@ -99,6 +100,16 @@ class ExecutionGroup:
         """Return the executions in insertion order."""
         return list(self._executions)
 
+    @classmethod
+    def change_storage_path(cls, new_path: str | Path):
+        """
+        Changes the path in which the execution group will be saved. Beware this changes the setting for all new groups.
+        Groups that have already been created during this run will consequently be stored in the same location as before.
+        Loading a group that was stored after this change will require to restore the modified path before calling __init__.
+        """
+        cls._PERSISTENT_DATA = PersistentData(new_path)
+        cls._DIR_PATH = cls._PERSISTENT_DATA.create_sub_directory(EGRP_DIR_NAME)
+
     def _set_file_path(self) -> None:
         self._file_path = os.path.join(self._DIR_PATH, f"{self._name}.{FILE_EXT_EGRP}")
 
@@ -125,7 +136,8 @@ class ExecutionGroup:
 
     @classmethod
     def list_locally_saved(cls) -> list[str]:
-        """Return the names of all execution groups saved on disk."""
+        """Return the names of all execution groups saved on disk,
+        in the path specified by change_storage_path() if it was called, otherwise in the current directory."""
         return [
             os.path.splitext(filename)[0]
             for filename in os.listdir(cls._DIR_PATH)
@@ -226,7 +238,8 @@ class ExecutionGroup:
     @classmethod
     def delete_execution_group(cls, name: str) -> None:
         """
-        Delete a single group by name
+        Delete a single group by name.
+        This group must be stored at the location defined in change_storage_path() if defined, otherwise in the current directory.
 
         :param name: name of the ExecutionGroup to delete
         """
@@ -492,6 +505,9 @@ class ExecutionGroup:
             else:
                 results.append(None)
         return results
+
+
+ExecutionGroup.change_storage_path(".")
 
 
 def _save_execution_group(group: ExecutionGroup, archive: OutputArchive):
