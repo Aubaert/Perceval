@@ -121,7 +121,8 @@ class ExecutionGroup:
         archive = OutputArchive()
         Serialization.serialize(self, archive)
         # TODO: rather than serializing self, should we insert one value for each job into the archive and store only that?
-        self._PERSISTENT_DATA.write_file(self._file_path, archive.to_text(), FileFormat.TEXT)
+        # TODO: use json format so it is "more" readable? Compress? Leave the choice to the user?
+        self._PERSISTENT_DATA.write_file(self._file_path, archive.to_text(compress=True), FileFormat.TEXT)
 
     def _load_execution_group(self) -> None:
         """Load this group from its archive file."""
