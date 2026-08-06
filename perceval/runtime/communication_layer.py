@@ -168,6 +168,12 @@ class RPCBasedCommunicationLayer(CommunicationLayer):
     def get_specs(self) -> PlatformSpecs:
         return self._specs
 
+    @staticmethod
+    def _serialize(obj):
+        archive = OutputArchive()
+        Serialization.serialize(obj, archive)
+        return archive.to_text()  # Use other format ? Compress ?
+
     def send(self, payload: dict) -> RemoteId:
         computation = PayloadGenerator.get_computation(payload)
 
@@ -185,9 +191,10 @@ class RPCBasedCommunicationLayer(CommunicationLayer):
 
         else:
             # We serialize the payload here, using the new serialization system - Needed to serialize Computation
-            archive = OutputArchive()
-            Serialization.serialize(payload, archive)
-            payload = archive.to_text()  # Use other format ? Compress ?
+            cloud_needed_fields = [KEY_COMMAND, KEY_MAX_SHOTS, KEY_MAX_SAMPLES]
+            for key, value in payload.items():
+                if key not in cloud_needed_fields:
+                    payload[key] = self._serialize(value)
 
         global_data = PayloadGenerator.generate_global_data(payload,
                                                             {KEY_PLATFORM_NAME: self._rpc_handler.name,
