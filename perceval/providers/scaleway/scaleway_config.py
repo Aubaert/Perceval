@@ -27,8 +27,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from perceval.runtime import RemoteConfig
-
+from perceval.runtime.remote_config import AbstractRemoteConfig
 
 TOKEN_ENV_VAR = "SCALEWAY_CLOUD_TOKEN"
 
@@ -38,7 +37,7 @@ _CONFIG_FILE_NAME = "scaleway_config.json"  # Use the same file for every config
 
 
 
-class ScalewayConfig(RemoteConfig):
+class ScalewayConfig(AbstractRemoteConfig):
     """Handle the remote configuration for the Scaleway API.
 
     Note: the ``secret_key`` argument from the Scaleway classes is stored under the name ``token`` for coherence with
@@ -55,7 +54,7 @@ class ScalewayConfig(RemoteConfig):
 
     _provider_name: str = None
 
-    _FIELDS = RemoteConfig._FIELDS | {
+    _FIELDS = AbstractRemoteConfig._FIELDS | {
         PROVIDER_KEY: "_provider_name",
     }
 

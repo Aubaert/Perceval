@@ -27,8 +27,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from perceval.runtime import RemoteConfig
-
+from perceval.runtime.remote_config import AbstractRemoteConfig
 
 TOKEN_ENV_VAR = "KIPU_CLOUD_TOKEN"
 
@@ -38,7 +37,7 @@ _CONFIG_FILE_NAME = "kipu_config.json"  # Use the same file for every config and
 
 
 
-class KipuConfig(RemoteConfig):
+class KipuConfig(AbstractRemoteConfig):
     """Handle the remote configuration for the Kipu API.
 
     :param persistent_data: The persistent data access to use. In a standard environment, always use the default.
@@ -51,7 +50,7 @@ class KipuConfig(RemoteConfig):
 
     _organization_id: str | None = None
 
-    _FIELDS = RemoteConfig._FIELDS | {
+    _FIELDS = AbstractRemoteConfig._FIELDS | {
         ORGANIZATION_ID_KEY: "_organization_id",
     }
 

@@ -30,32 +30,27 @@
 from __future__ import annotations
 import os
 
-from perceval.utils.logging import deprecated
 from perceval.utils.persistent_data import PersistentData
-
-QUANDELA_CLOUD_URL = 'https://api.cloud.quandela.com'
 
 REMOTE_KEY = "remote"
 PROXIES_KEY = "proxies"
 URL_KEY = "url"
 TOKEN_KEY = "token"
 
-TOKEN_ENV_VAR = "PCVL_CLOUD_TOKEN"
 
-
-# TODO: move this class to providers/quandela ?
-class RemoteConfig:
+class AbstractRemoteConfig:
     """Handle the remote configuration.
 
     :param persistent_data: The persistent data access to use. In a standard environment, always use the default.
     """
-    _token_env_var = TOKEN_ENV_VAR
+    # Variables to be set by the subclass
+    _token_env_var: str
+    _CONFIG_FILE_NAME: str
+    _DEFAULT_URL: str
+
     _proxies = None
     _token = None
     _url = None
-
-    _CONFIG_FILE_NAME = "config.json"
-    _DEFAULT_URL = QUANDELA_CLOUD_URL
 
     _FIELDS = {
         PROXIES_KEY: "_proxies",
@@ -135,7 +130,7 @@ class RemoteConfig:
 
         The priority for the token search is as follows:
         * A token already in cache (e.g. set by the user or already found in a previous call)
-        * The value of the "{TOKEN_ENV_VAR}" environment variable
+        * The value of the environment variable given by self.get_token_env_var()
         * The value in Perceval persistent configuration
 
         :return: The token
@@ -146,7 +141,7 @@ class RemoteConfig:
 
     @classmethod
     def set_token_env_var(cls, env_var: str) -> None:
-        f"""Change the name of the environment variable storing a token. Default is {TOKEN_ENV_VAR}.
+        f"""Change the name of the environment variable storing a token.
 
         :param env_var: name of the new environment variable to search for
         """
@@ -180,3 +175,18 @@ class RemoteConfig:
             config[REMOTE_KEY][field] = getattr(cls, attribute)
 
         self._persistent_data.save_config(config, cls._CONFIG_FILE_NAME)
+
+
+QUANDELA_CLOUD_URL = 'https://api.cloud.quandela.com'
+TOKEN_ENV_VAR = "PCVL_CLOUD_TOKEN"
+
+# TODO: move this class to providers/quandela ?
+class RemoteConfig(AbstractRemoteConfig):
+    """Handle the remote configuration for Quandela provider.
+
+    :param persistent_data: The persistent data access to use. In a standard environment, always use the default.
+    """
+    _token_env_var = TOKEN_ENV_VAR
+    _CONFIG_FILE_NAME = "config.json"
+
+    _DEFAULT_URL = QUANDELA_CLOUD_URL
