@@ -33,6 +33,8 @@ import traceback
 from urllib.parse import quote_plus
 
 import requests
+
+from perceval.runtime import RemoteConfig
 from perceval.serialization import Serialization
 from perceval.utils.logging import get_logger, channel
 
@@ -61,8 +63,19 @@ class RPCHandler:
     :param proxies: dictionary mapping protocol to the URL of the proxy
     """
 
-    def __init__(self, name, url, token, proxies = None):
+    def __init__(self, name, url = None, token = None, proxies = None):
         self.name = name
+
+        remote = RemoteConfig()
+        if token is None:
+            token = remote.get_token()
+        if not token:
+            raise ConnectionError("No token found")
+        if url is None:
+            url = remote.get_url()
+        if proxies is None:
+            proxies = remote.get_proxies()
+
         self.url = url
         self.proxies = proxies
         self.token = token or dict()
@@ -196,6 +209,7 @@ class RPCHandler:
         return self.get_request(endpoint)
 
 
+# TODO: use the __init__ with only 'name', and insert 'request_timeout'. The remaining must be read from the config
 Serialization.register_class(
     RPCHandler,
     ["name", "url", "proxies", "token", "headers", "request_timeout"],

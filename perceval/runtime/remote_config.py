@@ -43,6 +43,7 @@ TOKEN_KEY = "token"
 TOKEN_ENV_VAR = "PCVL_CLOUD_TOKEN"
 
 
+# TODO: move this class to providers/quandela ?
 class RemoteConfig:
     """Handle the remote configuration.
 
@@ -53,21 +54,31 @@ class RemoteConfig:
     _token = None
     _url = None
 
+    _CONFIG_FILE_NAME = "config.json"
+    _DEFAULT_URL = QUANDELA_CLOUD_URL
+
+    _FIELDS = {
+        PROXIES_KEY: "_proxies",
+        URL_KEY: "_url",
+        TOKEN_KEY: "_token"
+    }
+
     def __init__(self, persistent_data: PersistentData = PersistentData()): # !! default value is evaluated during file load, so test_remote_config_env_var_vs_cache cannot mock it !!
+        # TODO: there might be problems on autoloading if we allow the PersistentData not to be the default one
         self._persistent_data = persistent_data
 
     def _get_remote_config(self, key) -> str | dict[str, str] | None:
-        config = self._persistent_data.load_config()
+        config = self._persistent_data.load_config(self._CONFIG_FILE_NAME)
         if REMOTE_KEY in config:
             return config[REMOTE_KEY].get(key)
         return None
 
-    @staticmethod
-    def _get_token_from_env_var() -> str | None:
-        return os.getenv(RemoteConfig._token_env_var)
+    @classmethod
+    def _get_token_from_env_var(cls) -> str | None:
+        return os.getenv(cls._token_env_var)
 
-    @staticmethod
-    def set_proxies(proxies: dict[str, str]) -> None:
+    @classmethod
+    def set_proxies(cls, proxies: dict[str, str]) -> None:
         """
         Set the proxy configuration.
 
@@ -80,22 +91,22 @@ class RemoteConfig:
 
         :param proxies: proxy configuration in the form of a dictionary which maps protocols to URLs
         """
-        RemoteConfig._proxies = proxies
+        cls._proxies = proxies
 
     def get_proxies(self) -> dict[str, str]:
         """Get the proxy configuration as a mapping of protocols to URLs."""
-        if not RemoteConfig._proxies:
-            RemoteConfig._proxies = self._get_remote_config(PROXIES_KEY)
-        return RemoteConfig._proxies or {}
+        if not self._proxies:
+            self.set_proxies(self._get_remote_config(PROXIES_KEY))
+        return self._proxies or {}
 
-    @staticmethod
-    def set_url(url: str) -> None:
+    @classmethod
+    def set_url(cls, url: str) -> None:
         """Set a cloud URL in the configuration cache. It is not saved on disk before the `save` method
         is called.
 
         :param url: The cloud URL
         """
-        RemoteConfig._url = url
+        cls._url = url
 
     def get_url(self) -> str:
         """Search a valid cloud URL from the environment, put it in cache and return it.
@@ -106,18 +117,18 @@ class RemoteConfig:
 
         :return: The cloud URL
         """
-        if not RemoteConfig._url:
-            RemoteConfig._url = self._get_remote_config(URL_KEY)
-        return RemoteConfig._url or QUANDELA_CLOUD_URL
+        if not self._url:
+            self.set_url(self._get_remote_config(URL_KEY))
+        return self._url or self._DEFAULT_URL
 
-    @staticmethod
-    def set_token(token: str) -> None:
+    @classmethod
+    def set_token(cls, token: str) -> None:
         """Set a user authentication token in the configuration cache. It is not saved on disk before the `save` method
         is called.
 
         :param token: The token
         """
-        RemoteConfig._token = token
+        cls._token = token
 
     def get_token(self) -> str:
         f"""Search a valid token from the environment, put it in cache and return it.
@@ -129,44 +140,43 @@ class RemoteConfig:
 
         :return: The token
         """
-        if not RemoteConfig._token:
-            RemoteConfig._token = self._get_token_from_env_var() or self._get_remote_config(TOKEN_KEY)
-        return RemoteConfig._token or ""
+        if not self._token:
+            self.set_token(self._get_token_from_env_var() or self._get_remote_config(TOKEN_KEY))
+        return self._token or ""
 
-    @staticmethod
-    def set_token_env_var(env_var: str) -> None:
+    @classmethod
+    def set_token_env_var(cls, env_var: str) -> None:
         f"""Change the name of the environment variable storing a token. Default is {TOKEN_ENV_VAR}.
 
         :param env_var: name of the new environment variable to search for
         """
-        RemoteConfig._token_env_var = env_var
+        cls._token_env_var = env_var
         # reload the token
-        new_token = RemoteConfig._get_token_from_env_var()
+        new_token = cls._get_token_from_env_var()
         if new_token:
-            RemoteConfig._token = new_token
+            cls._token = new_token
 
-    @staticmethod
-    def get_token_env_var() -> str:
+    @classmethod
+    def get_token_env_var(cls) -> str:
         """Get the name of the environment variable storing a token."""
-        return RemoteConfig._token_env_var
+        return cls._token_env_var
 
-    @staticmethod
-    def clear_cache():
+    @classmethod
+    def clear_cache(cls):
         """Delete the RemoteConfig cache."""
-        RemoteConfig._proxies = None
-        RemoteConfig._url = None
-        RemoteConfig._token = None
+        for field, attribute in cls._FIELDS.items():
+            setattr(cls, attribute, None)
 
     def save(self) -> None:
         """Save the current remote configuration on disk.
         After this, the configuration is persistent and can be found in other Perceval sessions (even in different
         virtual envs)."""
-        config = self._persistent_data.load_config()
+        cls = type(self)
+        config = self._persistent_data.load_config(cls._CONFIG_FILE_NAME)
         if REMOTE_KEY not in config:
             config[REMOTE_KEY] = {}
 
-        config[REMOTE_KEY][PROXIES_KEY] = RemoteConfig._proxies
-        config[REMOTE_KEY][URL_KEY] = RemoteConfig._url
-        config[REMOTE_KEY][TOKEN_KEY] = RemoteConfig._token
+        for field, attribute in cls._FIELDS.items():
+            config[REMOTE_KEY][field] = getattr(cls, attribute)
 
-        self._persistent_data.save_config(config)
+        self._persistent_data.save_config(config, cls._CONFIG_FILE_NAME)

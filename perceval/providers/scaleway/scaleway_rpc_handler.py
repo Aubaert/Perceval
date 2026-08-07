@@ -38,12 +38,13 @@ from perceval.serialization import Serialization
 from perceval.utils.logging import get_logger, channel
 from perceval.utils.constants import KEY_JOB_NAME, KEY_PAYLOAD
 
+from .scaleway_config import ScalewayConfig
+
 _ENDPOINT_PLATFORM = "/qaas/v1alpha1/platforms"
 _ENDPOINT_JOB = "/qaas/v1alpha1/jobs"
 _ENDPOINT_SESSION = "/qaas/v1alpha1/sessions"
 
-_DEFAULT_URL = "https://api.scaleway.com"
-_DEFAULT_PLATFORM_PROVIDER = "quandela"
+
 
 
 class RPCHandler:
@@ -52,21 +53,30 @@ class RPCHandler:
     def __init__(
         self,
         project_id: str,
-        secret_key: str,
+        secret_key: str | None,
         url: str | None,
         proxies: dict | None,
         platform_name: str,
         provider_name: str | None,
     ):
+        config = ScalewayConfig()
+        secret_key = secret_key or config.get_token()
+        if not secret_key:
+            raise ConnectionError("No secret key found")
+
+        url = url or config.get_url()
+        proxies = proxies or config.get_proxies()
+        provider_name = provider_name or config.get_provider()
+
         self._project_id = project_id
-        self._url = url or _DEFAULT_URL
-        self._proxies = proxies or dict()
+        self._url = url
+        self._proxies = proxies
         self._session_id = None
         self._platform_name = platform_name
         self._headers = {
             "X-Auth-Token": secret_key,
         }
-        self._provider_name = provider_name or _DEFAULT_PLATFORM_PROVIDER
+        self._provider_name = provider_name
         self._platform_id = self.get_platform(
             platform_name=self._platform_name, provider_name=self._provider_name
         )["id"]

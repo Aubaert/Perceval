@@ -31,8 +31,8 @@
 from perceval.runtime.legacy import ISession
 
 from .quandela import Session as QuandelaSession, QuandelaCommunicationLayer
-from .scaleway import Session as ScalewaySession, ScalewayCommunicationLayer
-from .kipu import Session as KipuSession, KipuCommunicationLayer
+from .scaleway import Session as ScalewaySession, ScalewayCommunicationLayer, ScalewayConfig
+from .kipu import Session as KipuSession, KipuCommunicationLayer, KipuConfig
 
 PROVIDER_LIST = {
     "Quandela": QuandelaSession,
