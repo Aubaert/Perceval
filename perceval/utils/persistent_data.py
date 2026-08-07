@@ -196,32 +196,30 @@ class PersistentData:
             raise NotImplementedError(f"format {format} is not supported")
         return data
 
-    def load_config(self, filename: str = _CONFIG_FILE_NAME) -> dict:
+    def load_config(self) -> dict:
         """Load perceval config from persistent data
 
-        :param filename: name of the config file to store the data
         :return: config
         """
         config = {}
-        if self.has_file(filename):
+        if self.has_file(_CONFIG_FILE_NAME):
             try:
-                config = json.loads(self.read_file(filename, FileFormat.TEXT))
+                config = json.loads(self.read_file(_CONFIG_FILE_NAME, FileFormat.TEXT))
             except (OSError, json.JSONDecodeError):
                 warnings.warn("Cannot read config file")
         return config
 
-    def save_config(self, config: dict, filename: str = _CONFIG_FILE_NAME) -> None:
+    def save_config(self, config: dict) -> None:
         """Save config into persistent data, update any config previously saved
 
         :param config: config to save
-        :param filename: name of the config file
         """
         if self.is_writable():
             file_config = self.load_config()
             file_config.update(config)
-            self.write_file(filename, json.dumps(file_config), FileFormat.TEXT)
+            self.write_file(_CONFIG_FILE_NAME, json.dumps(file_config), FileFormat.TEXT)
         else:
-            warnings.warn(UserWarning(f"Can't save configuration to {filename} in {self._directory}."))
+            warnings.warn(UserWarning(f"Can't save configuration to {_CONFIG_FILE_NAME} in {self._directory}."))
 
     def clear_all_data(self):
         """Delete all persistent data except for log

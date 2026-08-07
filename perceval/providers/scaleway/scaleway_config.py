@@ -33,9 +33,6 @@ TOKEN_ENV_VAR = "SCALEWAY_CLOUD_TOKEN"
 
 PROVIDER_KEY = "provider_name"
 
-_CONFIG_FILE_NAME = "scaleway_config.json"  # Use the same file for every config and distinguish them by the key inside?
-
-
 
 class ScalewayConfig(AbstractRemoteConfig):
     """Handle the remote configuration for the Scaleway API.
@@ -48,7 +45,7 @@ class ScalewayConfig(AbstractRemoteConfig):
 
     _token_env_var = TOKEN_ENV_VAR
 
-    _CONFIG_FILE_NAME = "scaleway_config.json"
+    _REMOTE_KEY = "scaleway"
     _DEFAULT_URL = "https://api.scaleway.com"
     _DEFAULT_PLATFORM_PROVIDER = "quandela"
 

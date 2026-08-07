@@ -32,7 +32,6 @@ import os
 
 from perceval.utils.persistent_data import PersistentData
 
-REMOTE_KEY = "remote"
 PROXIES_KEY = "proxies"
 URL_KEY = "url"
 TOKEN_KEY = "token"
@@ -45,15 +44,14 @@ class AbstractRemoteConfig:
     """
     # Variables to be set by the subclass
     _token_env_var: str
-    _CONFIG_FILE_NAME: str
     _DEFAULT_URL: str
+    _REMOTE_KEY: str = "remote"  # Shared for proxies
 
-    _proxies = None
+    _proxies = None  # Shared among all subclasses
     _token = None
     _url = None
 
     _FIELDS = {
-        PROXIES_KEY: "_proxies",
         URL_KEY: "_url",
         TOKEN_KEY: "_token"
     }
@@ -62,20 +60,21 @@ class AbstractRemoteConfig:
         # TODO: there might be problems on autoloading if we allow the PersistentData not to be the default one
         self._persistent_data = persistent_data
 
-    def _get_remote_config(self, key) -> str | dict[str, str] | None:
-        config = self._persistent_data.load_config(self._CONFIG_FILE_NAME)
-        if REMOTE_KEY in config:
-            return config[REMOTE_KEY].get(key)
+    def _get_remote_config(self, key, remote_key: str = None) -> str | dict[str, str] | None:
+        config = self._persistent_data.load_config()
+        remote_key = remote_key or self._REMOTE_KEY
+        if remote_key in config:
+            return config[remote_key].get(key)
         return None
 
     @classmethod
     def _get_token_from_env_var(cls) -> str | None:
         return os.getenv(cls._token_env_var)
 
-    @classmethod
-    def set_proxies(cls, proxies: dict[str, str]) -> None:
+    @staticmethod
+    def set_proxies(proxies: dict[str, str]) -> None:
         """
-        Set the proxy configuration.
+        Set the proxy configuration. The proxy configuration is shared between all configurations.
 
         Usage example:
 
@@ -86,12 +85,12 @@ class AbstractRemoteConfig:
 
         :param proxies: proxy configuration in the form of a dictionary which maps protocols to URLs
         """
-        cls._proxies = proxies
+        AbstractRemoteConfig._proxies = proxies
 
     def get_proxies(self) -> dict[str, str]:
         """Get the proxy configuration as a mapping of protocols to URLs."""
         if not self._proxies:
-            self.set_proxies(self._get_remote_config(PROXIES_KEY))
+            self.set_proxies(self._get_remote_config(PROXIES_KEY, AbstractRemoteConfig._REMOTE_KEY))
         return self._proxies or {}
 
     @classmethod
@@ -159,6 +158,7 @@ class AbstractRemoteConfig:
     @classmethod
     def clear_cache(cls):
         """Delete the RemoteConfig cache."""
+        AbstractRemoteConfig._proxies = None
         for field, attribute in cls._FIELDS.items():
             setattr(cls, attribute, None)
 
@@ -167,14 +167,17 @@ class AbstractRemoteConfig:
         After this, the configuration is persistent and can be found in other Perceval sessions (even in different
         virtual envs)."""
         cls = type(self)
-        config = self._persistent_data.load_config(cls._CONFIG_FILE_NAME)
-        if REMOTE_KEY not in config:
-            config[REMOTE_KEY] = {}
+        config = self._persistent_data.load_config()
+        if self._REMOTE_KEY not in config:
+            config[self._REMOTE_KEY] = {}
+        if AbstractRemoteConfig._REMOTE_KEY not in config:
+            config[AbstractRemoteConfig._REMOTE_KEY] = {}
 
+        config[AbstractRemoteConfig._REMOTE_KEY][PROXIES_KEY] = self._proxies
         for field, attribute in cls._FIELDS.items():
-            config[REMOTE_KEY][field] = getattr(cls, attribute)
+            config[self._REMOTE_KEY][field] = getattr(cls, attribute)
 
-        self._persistent_data.save_config(config, cls._CONFIG_FILE_NAME)
+        self._persistent_data.save_config(config)
 
 
 QUANDELA_CLOUD_URL = 'https://api.cloud.quandela.com'
@@ -187,6 +190,5 @@ class RemoteConfig(AbstractRemoteConfig):
     :param persistent_data: The persistent data access to use. In a standard environment, always use the default.
     """
     _token_env_var = TOKEN_ENV_VAR
-    _CONFIG_FILE_NAME = "config.json"
 
     _DEFAULT_URL = QUANDELA_CLOUD_URL

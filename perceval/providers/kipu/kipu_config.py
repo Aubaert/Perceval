@@ -33,9 +33,6 @@ TOKEN_ENV_VAR = "KIPU_CLOUD_TOKEN"
 
 ORGANIZATION_ID_KEY = "organization_id"
 
-_CONFIG_FILE_NAME = "kipu_config.json"  # Use the same file for every config and distinguish them by the key inside?
-
-
 
 class KipuConfig(AbstractRemoteConfig):
     """Handle the remote configuration for the Kipu API.
@@ -45,7 +42,7 @@ class KipuConfig(AbstractRemoteConfig):
 
     _token_env_var = TOKEN_ENV_VAR
 
-    _CONFIG_FILE_NAME = "scaleway_config.json"
+    _REMOTE_KEY = "kipu"
     _DEFAULT_URL = None
 
     _organization_id: str | None = None
