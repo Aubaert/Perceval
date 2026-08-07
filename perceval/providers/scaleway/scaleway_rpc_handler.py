@@ -34,7 +34,7 @@ import json
 from datetime import datetime, timedelta
 from requests import HTTPError
 
-from perceval.serialization import Serialization
+from perceval.serialization import Serialization, InputArchive
 from perceval.utils.logging import get_logger, channel
 from perceval.utils.constants import KEY_JOB_NAME, KEY_PAYLOAD
 
@@ -43,8 +43,6 @@ from .scaleway_config import ScalewayConfig
 _ENDPOINT_PLATFORM = "/qaas/v1alpha1/platforms"
 _ENDPOINT_JOB = "/qaas/v1alpha1/jobs"
 _ENDPOINT_SESSION = "/qaas/v1alpha1/sessions"
-
-
 
 
 class RPCHandler:
@@ -342,8 +340,31 @@ class RPCHandler:
         )
 
 
+def _load_scaleway_rpc_handler(
+    handler: RPCHandler,
+    archive: InputArchive,
+    members,
+    version: int,
+):
+    if version != 0:
+        raise RuntimeError(f"Unsupported ScalewayRPCHandler serialization version {version}")
+    values = {name: archive.create(index) for name, index in members}
+    handler.__init__(
+        project_id=values["_project_id"],
+        secret_key=None,  # to be filled by the ScalewayConfig
+        url=values["_url"],
+        proxies=None,  # to be filled by the ScalewayConfig
+        platform_name=values["_platform_name"],
+        provider_name=values["_provider_name"],
+    )
+    handler._session_id = values["_session_id"]
+
+
 Serialization.register_class(
     RPCHandler,
-    ["_project_id", "_url", "_proxies", "_session_id", "_platform_name", "_headers", "_provider_name", "_platform_id"],
+    class_serial_members_write=lambda handler, archive: archive.save_attr(
+        handler, ["_project_id", "_url", "_session_id", "_platform_name", "_provider_name"]
+    ),
+    class_serial_members_read=_load_scaleway_rpc_handler,
     tag="ScalewayRPCHandler",
 )

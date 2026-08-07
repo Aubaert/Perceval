@@ -336,16 +336,16 @@ def _load_kipu_rpc_handler(
     handler.__init__(
         platform_name=values["_platform_name"],
         url=values["_url"],
-        token=values["_token"],
+        # token = to be filled by the KipuConfig,
         organization_id=values["_organization_id"],
-        proxies=values["_proxies"],
+        # proxies = to be filled by the KipuConfig,
     )
 
 
 Serialization.register_class(
     KipuRPCHandler,
     class_serial_members_write=lambda handler, archive: archive.save_attr(
-        handler, ["_platform_name", "_url", "_token", "_organization_id", "_proxies"]
+        handler, ["_platform_name", "_url", "_organization_id"]
     ),
     class_serial_members_read=_load_kipu_rpc_handler,
 )
