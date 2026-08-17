@@ -27,10 +27,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .abstract_mitigation import AbstractMitigation
-from .imperfections import Imperfections, update_imperfections_from_results
-from .photon_recycling import photon_recycling, PhotonRecycling
-from .compilation_averaging import CompilationAveraging
-from .distinguishable_photon_mitigation import DistinguishablePhotonMitigation
-from .detector_balancing import DetectorBalancing
-from .mitigation_factory import MitigationLevel, MitigationFactory
+import dataclasses
+from copy import copy
+
+from perceval.utils import NoiseModel
+from perceval.utils.constants import KEY_NOISE
+from perceval.components import IDetector
+
+
+@dataclasses.dataclass
+class Imperfections:
+    """
+    Dataclass representing every imperfection source that can be mitigated.
+    """
+    noise: NoiseModel
+    detectors: list[IDetector | None]
+
+
+def update_imperfections_from_results(imperfections: Imperfections, results: dict) -> Imperfections:
+    # Tool given to any mitigation if needed.
+    # It MUST NOT be used to extend the computation during parsing since we want the original extension
+    new_imperfections = copy(imperfections)
+    if KEY_NOISE in results:
+        new_imperfections.noise = results[KEY_NOISE]
+    if "detectors" in results:
+        new_imperfections.detectors = results["detectors"]
+    return new_imperfections

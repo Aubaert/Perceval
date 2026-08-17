@@ -36,7 +36,7 @@ from .computation import Computation
 from .abstract_computer import AbstractComputer
 from .computation_iterator import ComputationIterator
 from .platform_specs import PlatformSpecs
-from .error_mitigation import AbstractMitigation
+from .error_mitigation import AbstractMitigation, Imperfections
 from .job_status import RunningStatus
 from .simulated_computer import SimulatedComputer
 from .async_getter import AsyncGetter
@@ -210,6 +210,14 @@ class RemoteComputer(AbstractComputer):
         while not async_getter.is_complete:
             time.sleep(1)
         return async_getter.get_results()
+
+    def _get_imperfections(self, computation: Computation | ComputationIterator) -> Imperfections:
+        architecture = self.specs.architecture
+        if architecture is not None:
+            detectors = architecture.detectors  # TODO: use the perfs to correct the efficiency automatically ?
+        else:
+            detectors = computation.experiment.detectors  # Supposes the remote can simulate them
+        return Imperfections(self.noise, detectors)  # We drop experiment.noise in this case (deprecated anyway)
 
     def _execute_command_async(self, computation: Computation) -> _RemoteGetter:
         payload = self.prepare_payload(computation)

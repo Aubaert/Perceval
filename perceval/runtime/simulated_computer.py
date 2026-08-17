@@ -38,7 +38,9 @@ from perceval.utils.logging import get_logger, channel
 
 from .local_computer import LocalComputer
 from .computation import Computation
+from .computation_iterator import ComputationIterator
 from .platform_specs import PlatformSpecs
+from .error_mitigation import Imperfections
 
 
 class SimulatedComputer(LocalComputer):
@@ -76,6 +78,10 @@ class SimulatedComputer(LocalComputer):
         if noise is None:
             noise = NoiseModel()
         self._noise = noise
+
+    def _get_imperfections(self, computation: Computation | ComputationIterator) -> Imperfections:
+        experiment = computation.experiment
+        return Imperfections(experiment.noise or self.noise, computation.experiment.detectors)
 
     def validate_single(self, computation: Computation) -> None:
         super().validate_single(computation)
