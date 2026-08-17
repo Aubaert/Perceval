@@ -27,32 +27,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-SEP = ":"
-PCVL_PREFIX = f"{SEP}PCVL{SEP}"
-ZIP_PREFIX = f"{PCVL_PREFIX}zip{SEP}"
+from typing import Callable, Any
 
-MATRIX_TAG = "Matrix"
-MATRIXN_TAG = "MatrixN"
-MATRIXS_TAG = "MatrixS"
-CIRCUIT_TAG = "ACircuit"
-COMPONENT_TAG = "Component"
-EXPERIMENT_TAG = "Experiment"
-COMPILED_CIRCUIT_TAG = "CompiledCircuit"
-COMPILED_CIRCUIT_VERSION_TAG = "CompiledCircuitVersion"
-HERALD_TAG = "Herald"
-PORT_TAG = "Port"
-BS_TAG = "BasicState"
-FS_TAG = "FockState"
-NFS_TAG = "NoisyFockState"
-AFS_TAG = "AnnotatedFockState"
-SV_TAG = "StateVector"
-SVD_TAG = "SVDistribution"
-BSD_TAG = "BSDistribution"
-BSC_TAG = "BSCount"
-BSS_TAG = "BSSamples"
-NOISE_TAG = "NoiseModel"
-POSTSELECT_TAG = "PostSelect"
-BS_LAYERED_DETECTOR_TAG = "BSLayeredDetector"
-DETECTOR_TAG = "Detector"
 
-VALUE_NOT_SET = 0x0fffffff  # Maximum writable value
+class ClassRegistry:
+    _serializers_by_class: dict[type, Any] = {}
+    _serializers_by_tag: dict[str, Any] = {}
+
+    # Filled later in serialization.py due to circular imports
+    create_data_serializer: Callable
+    create_data_split_serializer: Callable
+    create_custom_class_serializer: Callable
+
+    @staticmethod
+    def register(serdes):
+        if serdes.type in ClassRegistry._serializers_by_class:
+            raise RuntimeError(f"type {serdes.type.__name__} already registered")
+        if serdes.class_tag in ClassRegistry._serializers_by_tag:
+            raise RuntimeError(f"tag {serdes.class_tag} already registered")
+        ClassRegistry._serializers_by_class[serdes.type] = serdes
+        ClassRegistry._serializers_by_tag[serdes.class_tag] = serdes
+
+    @staticmethod
+    def get_by_class(cls: type):
+        if cls in ClassRegistry._serializers_by_class:
+            return ClassRegistry._serializers_by_class[cls]
+        raise RuntimeError(f"Serializers: unhandled class '{cls.__name__}'")
+
+    @staticmethod
+    def get_by_tag(tag: str):
+        if tag in ClassRegistry._serializers_by_tag:
+            return ClassRegistry._serializers_by_tag[tag]
+        raise RuntimeError (f"Serializers: unhandled tag '{tag}'")

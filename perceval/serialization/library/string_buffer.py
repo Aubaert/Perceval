@@ -1,5 +1,3 @@
-
-
 # MIT License
 #
 # Copyright (c) 2022 Quandela
@@ -29,18 +27,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-KNOWN_TYPES: dict[str, type] = {}
+class StringBuffer:
+    def __init__(self, value: str):
+        self.s = value
+        self.current = 0
 
-for t in [int, float, complex, str, bool, list, dict, tuple]:
-    KNOWN_TYPES[t.__name__] = t
+    def is_empty(self) -> bool:
+        return self.current >= len(self.s)
 
+    def get_next(self) -> str:
+        start = self.current
+        end = self.s.find(' ', start)
+        if end == -1: end = len(self.s)
+        self.current = end + 1
+        return self.s[start:end]
 
-def add_type_deserializer(t: type):
-    global KNOWN_TYPES
-    KNOWN_TYPES[t.__name__] = t
+    def get_until_next_token(self, token: str) -> str:
+        start = self.current
+        end = self.s.find(token, start)
+        if end == -1: raise RuntimeError(f"Missing token '{token}' in archive")
+        end += len(token)
+        self.current = end + 1
+        return self.s[start:end]
 
+    def get_n(self, n: int) -> str:
+        start = self.current
+        end = start + n
+        self.current = end + 1
+        return self.s[start:end]
 
-def deserialize_type(serialized_type: str) -> type:
-    if serialized_type in KNOWN_TYPES:
-        return KNOWN_TYPES[serialized_type]
-    raise TypeError(f"Unknown type {serialized_type}")
+    def get_int(self) -> int:
+        return int(self.get_next())

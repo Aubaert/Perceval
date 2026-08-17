@@ -29,9 +29,11 @@
 from requests import HTTPError
 
 from perceval.runtime.communication_layer import RPCBasedCommunicationLayer
+from perceval.serialization import InputArchive, Serialization
 from perceval.utils.logging import get_logger, channel
 
 from .rpc_handler import RPCHandler
+
 
 class QuandelaCommunicationLayer(RPCBasedCommunicationLayer):
 
@@ -50,3 +52,25 @@ class QuandelaCommunicationLayer(RPCBasedCommunicationLayer):
         except HTTPError:
             get_logger().warn("Impossible to determine whether there is room for a new job")
             return 0
+
+
+def _load_quandela_communication_layer(
+    communication_layer: QuandelaCommunicationLayer,
+    archive: InputArchive,
+    members,
+    version: int,
+):
+    if version != 0:
+        raise RuntimeError(
+            f"Unsupported QuandelaCommunicationLayer serialization version {version}"
+        )
+    RPCBasedCommunicationLayer.__init__(communication_layer, archive.create(members[0][1]))
+
+
+Serialization.register_class(
+    QuandelaCommunicationLayer,
+    class_serial_members_write=lambda communication_layer, archive: archive.save_attr(
+        communication_layer, ["_rpc_handler"]
+    ),
+    class_serial_members_read=_load_quandela_communication_layer,
+)

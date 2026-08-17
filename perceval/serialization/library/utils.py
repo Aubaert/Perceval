@@ -27,32 +27,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-SEP = ":"
-PCVL_PREFIX = f"{SEP}PCVL{SEP}"
-ZIP_PREFIX = f"{PCVL_PREFIX}zip{SEP}"
+from zlib import compress as zlib_compress, decompress as zlib_decompress
+from base64 import b64encode, b64decode
 
-MATRIX_TAG = "Matrix"
-MATRIXN_TAG = "MatrixN"
-MATRIXS_TAG = "MatrixS"
-CIRCUIT_TAG = "ACircuit"
-COMPONENT_TAG = "Component"
-EXPERIMENT_TAG = "Experiment"
-COMPILED_CIRCUIT_TAG = "CompiledCircuit"
-COMPILED_CIRCUIT_VERSION_TAG = "CompiledCircuitVersion"
-HERALD_TAG = "Herald"
-PORT_TAG = "Port"
-BS_TAG = "BasicState"
-FS_TAG = "FockState"
-NFS_TAG = "NoisyFockState"
-AFS_TAG = "AnnotatedFockState"
-SV_TAG = "StateVector"
-SVD_TAG = "SVDistribution"
-BSD_TAG = "BSDistribution"
-BSC_TAG = "BSCount"
-BSS_TAG = "BSSamples"
-NOISE_TAG = "NoiseModel"
-POSTSELECT_TAG = "PostSelect"
-BS_LAYERED_DETECTOR_TAG = "BSLayeredDetector"
-DETECTOR_TAG = "Detector"
 
-VALUE_NOT_SET = 0x0fffffff  # Maximum writable value
+def b64encoding(obj: bytes) -> str:
+    return b64encode(obj).decode('utf-8')
+
+
+def compress_str(obj: str):
+    serialized_string_compressed = zlib_compress(obj.encode('utf-8'))  # Compress byte to byte
+    return b64encoding(serialized_string_compressed)  # base64 to string
+
+
+def decompress_str(obj: str):
+    obj = b64decode(obj)
+    return zlib_decompress(obj).decode('utf-8')
