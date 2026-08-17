@@ -30,3 +30,4 @@
 from .scaleway_session import Session
 from .scaleway_rpc_handler import RPCHandler
 from .scaleway_communication_layer import ScalewayCommunicationLayer
+from .scaleway_config import ScalewayConfig

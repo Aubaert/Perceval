@@ -43,7 +43,6 @@ from .processor import Processor
 
 from ..communication_layer import PERFS_KEY
 from ..payload_generator import PayloadGenerator
-from ..remote_config import RemoteConfig
 from ..platform_specs import PlatformSpecs
 
 DEFAULT_TRANSMITTANCE = 0.06
@@ -92,30 +91,21 @@ class RemoteProcessor(AProcessor):
                       simulated noise is ignored when working on a physical Quantum Processing Unit
         """
         super().__init__(Experiment(m, name=name))
-        if rpc_handler is not None:  # When a rpc_handler object is passed, name, token and url are expected to be None
-            self._rpc_handler = rpc_handler
-            self.name = rpc_handler.name  # Here, we are mixing the experiment name and the Processor name
-            if name is not None and name != self.name:
-                get_logger().warn(
-                    f"Initialised a RemoteProcessor with two different platform names ({self.name} vs {name})", channel.user)
-            self.proxies = rpc_handler.proxies
-        else:
-            from perceval.providers.quandela.rpc_handler import RPCHandler
-
-            remote = RemoteConfig()
+        if rpc_handler is None:
             if name is None:
                 raise ValueError("Parameter 'name' must have a value")
-            if token is None:
-                token = remote.get_token()
-            if not token:
-                raise ConnectionError("No token found")
-            if url is None:
-                url = remote.get_url()
-            if proxies is None:
-                proxies = remote.get_proxies()
-            self.name = name
-            self.proxies = proxies
-            self._rpc_handler = RPCHandler(self.name, url, token, proxies)
+
+            from perceval.providers.quandela.rpc_handler import RPCHandler
+            rpc_handler = RPCHandler(name, url, token, proxies)
+
+        # When a rpc_handler object is passed, name, token and url are expected to be None
+        elif name is not None and name != rpc_handler.name:
+            get_logger().warn(
+                f"Initialised a RemoteProcessor with two different platform names ({rpc_handler.name} vs {name})", channel.user)
+
+        self._rpc_handler = rpc_handler
+        self.name = rpc_handler.name   # Here, we are mixing the experiment name and the Processor name
+        self.proxies = rpc_handler.proxies
 
         self._specs = PlatformSpecs()
         self._perfs = {}

@@ -34,16 +34,15 @@ import json
 from datetime import datetime, timedelta
 from requests import HTTPError
 
-from perceval.serialization import Serialization
+from perceval.serialization import Serialization, InputArchive
 from perceval.utils.logging import get_logger, channel
 from perceval.utils.constants import KEY_JOB_NAME, KEY_PAYLOAD
+
+from .scaleway_config import ScalewayConfig
 
 _ENDPOINT_PLATFORM = "/qaas/v1alpha1/platforms"
 _ENDPOINT_JOB = "/qaas/v1alpha1/jobs"
 _ENDPOINT_SESSION = "/qaas/v1alpha1/sessions"
-
-_DEFAULT_URL = "https://api.scaleway.com"
-_DEFAULT_PLATFORM_PROVIDER = "quandela"
 
 
 class RPCHandler:
@@ -52,21 +51,30 @@ class RPCHandler:
     def __init__(
         self,
         project_id: str,
-        secret_key: str,
+        secret_key: str | None,
         url: str | None,
         proxies: dict | None,
         platform_name: str,
         provider_name: str | None,
     ):
+        config = ScalewayConfig()
+        secret_key = secret_key or config.get_token()
+        if not secret_key:
+            raise ConnectionError("No secret key found")
+
+        url = url or config.get_url()
+        proxies = proxies or config.get_proxies()
+        provider_name = provider_name or config.get_provider()
+
         self._project_id = project_id
-        self._url = url or _DEFAULT_URL
-        self._proxies = proxies or dict()
+        self._url = url
+        self._proxies = proxies
         self._session_id = None
         self._platform_name = platform_name
         self._headers = {
             "X-Auth-Token": secret_key,
         }
-        self._provider_name = provider_name or _DEFAULT_PLATFORM_PROVIDER
+        self._provider_name = provider_name
         self._platform_id = self.get_platform(
             platform_name=self._platform_name, provider_name=self._provider_name
         )["id"]
@@ -332,8 +340,31 @@ class RPCHandler:
         )
 
 
+def _load_scaleway_rpc_handler(
+    handler: RPCHandler,
+    archive: InputArchive,
+    members,
+    version: int,
+):
+    if version != 0:
+        raise RuntimeError(f"Unsupported ScalewayRPCHandler serialization version {version}")
+    values = {name: archive.create(index) for name, index in members}
+    handler.__init__(
+        project_id=values["_project_id"],
+        secret_key=None,  # to be filled by the ScalewayConfig
+        url=values["_url"],
+        proxies=None,  # to be filled by the ScalewayConfig
+        platform_name=values["_platform_name"],
+        provider_name=values["_provider_name"],
+    )
+    handler._session_id = values["_session_id"]
+
+
 Serialization.register_class(
     RPCHandler,
-    ["_project_id", "_url", "_proxies", "_session_id", "_platform_name", "_headers", "_provider_name", "_platform_id"],
+    class_serial_members_write=lambda handler, archive: archive.save_attr(
+        handler, ["_project_id", "_url", "_session_id", "_platform_name", "_provider_name"]
+    ),
+    class_serial_members_read=_load_scaleway_rpc_handler,
     tag="ScalewayRPCHandler",
 )
