@@ -151,6 +151,9 @@ class RemoteComputer(AbstractComputer):
                              " Use the method experiment.min_detected_photons_filter(value).")
 
     def check_experiment(self, experiment: Experiment) -> None:
+        if experiment.input_state is None:
+            raise ValueError("The experiment has no input_state (call `with_input()`)")
+
         self.check_min_detected_photons_filter(experiment)
 
         constraints = self.specs.constraints

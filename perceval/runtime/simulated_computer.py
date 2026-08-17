@@ -87,6 +87,8 @@ class SimulatedComputer(LocalComputer):
 
     def validate_single(self, computation: Computation) -> None:
         super().validate_single(computation)
+        if computation.experiment.input_state is None:
+            raise ValueError("The experiment has no input_state (call `with_input()`)")
         self.check_min_detected_photons_filter(computation)
 
     @property
