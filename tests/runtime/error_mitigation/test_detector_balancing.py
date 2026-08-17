@@ -89,8 +89,9 @@ def test_computation_extension():
 
 
 def test_recombination():
+    efficiency = 0.1
     expected, sub_results = prepare_test()
-    imperfections = Imperfections(NoiseModel(), [Detector.ppnr(wire_efficiency=0.1)] * 2)
+    imperfections = Imperfections(NoiseModel(), [Detector.ppnr(wire_efficiency=efficiency)] * 2)
 
     averaging = DetectorBalancing()
 
@@ -100,6 +101,8 @@ def test_recombination():
     res = averaging.parse_results(computation, sub_results, imperfections)
 
     assert_bsd_close(res.pop("results"), expected.pop("results"))
+    res["global_perf"] *= efficiency ** 2
+    res["physical_perf"] *= efficiency ** 2
     assert pytest.approx(res) == expected
 
 
@@ -110,21 +113,24 @@ def test_run_through():
     experiment.min_detected_photons_filter(1)
 
     c = SimulatedComputer("SLOS")
+    c.compute_physical_logical_perf(True)
     c.noise = NoiseModel(0.05, 0.8, 0.03)
     computation = Computation(c.get_command("probs"), experiment)
 
-    perfect_res = c.execute(computation)["results"]
+    perfect_res = c.execute(computation)
 
     for m in range(experiment.circuit_size):
         experiment.add(m, Detector.ppnr(n_wires = 24, wire_efficiency = 0.5 + random.random() / 2))
 
-    noisy_res = c.execute(computation)["results"]
+    noisy_res = c.execute(computation)
     with pytest.raises(AssertionError):
-        assert_bsd_close(perfect_res, noisy_res)
+        assert_bsd_close(perfect_res["results"], noisy_res["results"])
 
     c.mitigations = [DetectorBalancing()]
-    mitigated_res = c.execute(computation)["results"]
-    assert_bsd_close(perfect_res, mitigated_res, rel=1e-4)
+    mitigated_res = c.execute(computation)
+    assert_bsd_close(perfect_res["results"], mitigated_res["results"], rel=1e-4)
+    assert pytest.approx(perfect_res["global_perf"], rel=1e-4) == mitigated_res["global_perf"]
+    assert pytest.approx(perfect_res["physical_perf"], rel=1e-4) == mitigated_res["physical_perf"]
 
 
 @patch.object(pcvl.utils.logging.ExqaliburLogger, "warn")  # Suppress the warning in tvd_dist()

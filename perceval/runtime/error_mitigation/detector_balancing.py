@@ -36,7 +36,8 @@ from .abstract_mitigation import AbstractMitigation
 from .imperfections import Imperfections
 from ..computation import Computation
 
-from perceval.utils.constants import KEY_RESULTS
+from perceval.utils.constants import KEY_RESULTS, KEY_GLOBAL_PERF, KEY_PHYSICAL_PERF
+
 
 class DetectorBalancing(AbstractMitigation):
     """
@@ -77,6 +78,7 @@ class DetectorBalancing(AbstractMitigation):
             res_by_n[state.n][state] = prob
 
         final_res = BSDistribution()
+        perf_factor = 0   # May be used by DistinguishablePhotonMitigation to get the 0-photon probability
         for n in range(len(res_by_n) - 1, -1, -1):
             for state in res_by_n[n].keys():
                 distributions = compute_distributions(state, detectors, {})
@@ -101,10 +103,14 @@ class DetectorBalancing(AbstractMitigation):
                             del res_by_n[sub_state.n][sub_state]
 
                 final_res[state] = state_prob
+                perf_factor += state_prob
 
         final_res.normalize()
 
         res = copy(results[0])  # We are going to modify this to keep custom fields as much as we can
         res[KEY_RESULTS] = final_res
+        res[KEY_GLOBAL_PERF] *= perf_factor  # May makes the perf bigger than 1, but should theoretically not do it
+        if KEY_PHYSICAL_PERF in res:
+            res[KEY_PHYSICAL_PERF] *= perf_factor
 
         return res
