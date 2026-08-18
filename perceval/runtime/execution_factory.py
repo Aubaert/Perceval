@@ -38,10 +38,22 @@ from .execution import Execution
 
 class ExecutionFactory:
 
-    def __init__(self, computer: AbstractComputer, experiment: Experiment):
+    def __init__(self, computer: AbstractComputer, experiment: Experiment, max_shots_per_call: int = None):
         self.computer = computer
         self.experiment = experiment
+        self.max_shots_per_call = max_shots_per_call
         self._iterator = []
+
+        self.default_job_name = None
+
+        if self.max_shots_per_call:
+            self.max_shots_per_call = int(self.max_shots_per_call)
+            if self.max_shots_per_call < 1:
+                raise RuntimeError('`max_shots_per_call` must be a positive value')
+        # max_shots_per_call must be found in **kwargs when the processor is remote.
+        # This condition is forced because the user will consume credits on the cloud and needs to set an upper bound
+        if computer.is_remote and not self.max_shots_per_call:
+            raise RuntimeError(f'Please input a `_max_shots_per_call` value when using a RemoteComputer')
 
     def add_iteration(self, **kwargs):
         """
@@ -80,8 +92,11 @@ class ExecutionFactory:
         return len(self._iterator)
 
     def build_computation(self, name: str) -> Computation | ComputationIterator:
-        # Note: this can also be used to create a computation that will last for more than
+        # Note: this can also be used to create a computation that will last for more than one execution
         comp = Computation(self.computer.get_command(name), self.experiment)
+        if self.max_shots_per_call is not None:
+            comp.add_params(max_shots = self.max_shots_per_call)
+
         if self.n_iterations > 0:
             comp = ComputationIterator(comp)
             for it in self._iterator:
@@ -90,7 +105,12 @@ class ExecutionFactory:
         return comp
 
     def build_execution(self, computation: Computation | ComputationIterator) -> Execution:
-        return Execution(computation, self.computer)
+        execution = Execution(computation, self.computer)
+
+        if self.default_job_name is not None:
+            execution.name = self.default_job_name
+
+        return execution
 
     @property
     def probs(self):

@@ -198,7 +198,7 @@ class PlatformSpecs(dict):
         """
         if "commands" in self:
             return self._getitem("commands")
-        return [getattr(CommandFactory, cmd) for cmd in self.get("available_commands", [])]
+        return [getattr(CommandFactory, cmd) for cmd in self.get("available_commands", []) if hasattr(CommandFactory, cmd)]
 
     @commands.setter
     def commands(self, value: list[Command]):

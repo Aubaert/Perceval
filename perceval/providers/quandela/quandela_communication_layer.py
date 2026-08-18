@@ -37,7 +37,7 @@ from .rpc_handler import RPCHandler
 
 class QuandelaCommunicationLayer(RPCBasedCommunicationLayer):
 
-    def __init__(self, name: str, token: str, url: str, proxies: dict[str, str] = None):
+    def __init__(self, name: str, token: str = None, url: str = None, proxies: dict[str, str] = None):
         super().__init__(RPCHandler(name, url, token, proxies))
         get_logger().info(f"Connected to Cloud platform {name}", channel.general)
 
