@@ -41,7 +41,7 @@ from perceval.utils.constants import KEY_JOB_NAME, KEY_JOB_CONTEXT, KEY_RESULT_M
 from perceval.utils.logging import channel, get_logger
 
 from .execution_status import JobStatus, RunningStatus
-from .command import Command
+from .command import Command, CommandFactory
 from .platform_specs import PlatformSpecs
 from .payload_updater import PayloadUpdater
 from .payload_generator import PayloadGenerator
@@ -288,7 +288,21 @@ class RPCBasedCommunicationLayer(CommunicationLayer):
         return self._perfs
 
     def get_commands(self) -> list[Command]:
-        return self._specs.commands
+        # TODO: simply return self._specs.commands (adaptation for non-updated platforms)
+        commands = list(self._specs.commands)
+        add_default = False
+        if any(command.name in ("probs", "sample_count", "samples") for command in commands):
+            add_default = True
+
+        if add_default:
+            if all(command.name != "probs" for command in commands):
+                commands.append(CommandFactory.probs)
+            if all(command.name != "sample_count" for command in commands):
+                commands.append(CommandFactory.sample_count)
+            if all(command.name != "samples" for command in commands):
+                commands.append(CommandFactory.samples)
+
+        return commands
 
     def get_remote_status(self) -> str:
         self.fetch_data()

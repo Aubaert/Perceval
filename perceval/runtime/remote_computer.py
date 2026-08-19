@@ -97,7 +97,7 @@ class RemoteComputer(AbstractComputer):
 
     def __init__(self, communication_layer: CommunicationLayer):
         super().__init__()
-        self._communication_layer = communication_layer  # cloud_access is the communication layer
+        self._communication_layer = communication_layer
         self._commands = {command.name: command for command in communication_layer.get_commands()}
         self._specs = communication_layer.get_specs()
         self._perfs = communication_layer.get_performances()
