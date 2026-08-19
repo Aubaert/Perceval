@@ -120,11 +120,11 @@ class SimulatedComputer(LocalComputer):
 
     @staticmethod
     def _make_input(experiment: Experiment, source: Source):
-        if isinstance(experiment.input_state, SVDistribution) \
-                or (isinstance(experiment.input_state, AnnotatedFockState) and experiment.input_state.has_polarization):
+        if isinstance(experiment.input_state, SVDistribution):
             # Custom input
             return experiment.input_state
-
+        elif isinstance(experiment.input_state, AnnotatedFockState) and experiment.input_state.has_polarization:
+            return SVDistribution(experiment.input_state)
         return source, experiment.input_state
 
     @staticmethod
