@@ -125,7 +125,7 @@ class AbstractRemoteConfig:
         cls._token = token
 
     def get_token(self) -> str:
-        f"""Search a valid token from the environment, put it in cache and return it.
+        """Search a valid token from the environment, put it in cache and return it.
 
         The priority for the token search is as follows:
         * A token already in cache (e.g. set by the user or already found in a previous call)
@@ -140,7 +140,7 @@ class AbstractRemoteConfig:
 
     @classmethod
     def set_token_env_var(cls, env_var: str) -> None:
-        f"""Change the name of the environment variable storing a token.
+        """Change the name of the environment variable storing a token.
 
         :param env_var: name of the new environment variable to search for
         """

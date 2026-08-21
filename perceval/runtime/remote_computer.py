@@ -91,6 +91,11 @@ class _RemoteGetter(AsyncGetter):
 
 
 class RemoteComputer(AbstractComputer):
+    """
+    A computer that sends Computations to a remote platform.
+
+    :param communication_layer: A CommunicationLayer used to communicate with the remote computer.
+    """
 
     WARN_INTERVAL = 1800
     INFO_INTERVAL = 10
@@ -348,7 +353,7 @@ class RemoteComputer(AbstractComputer):
         Compute an estimate number of required shots given the platform and the user request.
         The circuit, input state, minimum photon filter, and error mitigations are taken into account.
 
-        :param computation: The computation that will be sent with unknown number of samples
+        :param computation: The computation that will be sent with unknown number of samples. It needs to be valid.
         :param nsamples: Number of expected samples of interest
         :param param_values: Key/value pairs for variable parameters inside the circuit. All parameters need to be fixed
             for this computation to run.
@@ -365,7 +370,7 @@ class RemoteComputer(AbstractComputer):
         Compute an estimate number of samples the user can expect given the platform and the user request.
         The circuit, input state, minimum photon filter, and error mitigations are taken into account.
 
-        :param computation: The computation that will be sent with unknown number of shots
+        :param computation: The computation that will be sent with unknown number of shots. It needs to be valid.
         :param nshots: Number of shots the user is willing to consume
         :param param_values: Key/value pairs for variable parameters inside the circuit. All parameters need to be fixed
             for this computation to run.

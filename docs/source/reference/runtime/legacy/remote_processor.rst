@@ -66,7 +66,7 @@ Computation
 
 The only way to compute with a RemoteProcessor is to use it in a Quantum Algorithm.
 
-Misceallenous
+Miscellaneous
 -------------
 
 Some platforms expose specs (see :ref:`PlatformSpecs`) that give information about what the platform is, and what it can and can't do.
@@ -83,5 +83,5 @@ The needed resources in terms of samples or shots can be estimated by a RemotePr
 
 Note that this uses a partially noisy local simulation, so it can be expensive to compute.
 
-.. autoclass:: perceval.runtime.remote_processor.RemoteProcessor
+.. autoclass:: perceval.runtime.legacy.remote_processor.RemoteProcessor
    :members:

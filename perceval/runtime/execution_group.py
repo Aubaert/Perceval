@@ -40,6 +40,7 @@ from perceval.utils.logging import channel, get_logger
 
 from .execution import Execution
 from .execution_status import RunningStatus
+from .abstract_computer import AbstractComputer
 
 
 FILE_EXT_EGRP = "egrp"
@@ -279,11 +280,19 @@ class ExecutionGroup:
         """
         return self._filter_by_status_type([RunningStatus.RUNNING, RunningStatus.WAITING])
 
+    def list_active_computers(self) -> set[AbstractComputer]:
+        """Returns the set of computers having at least one active execution"""
+        return {exe.computer for exe in self.list_active_executions()}
+
     def list_unsuccessful_executions(self) -> list[Execution]:
         """
         Returns a list of all Executions in the group that have run unsuccessfully - errored or canceled
         """
         return self._filter_by_status_type([RunningStatus.ERROR, RunningStatus.CANCELED])
+
+    def list_unsuccessful_computers(self) -> set[AbstractComputer]:
+        """Returns the set of computers having at least one unsuccessful execution"""
+        return {exe.computer for exe in self.list_successful_executions()}
 
     def list_unsent_executions(self) -> list[Execution]:
         """
@@ -291,6 +300,9 @@ class ExecutionGroup:
         """
         return [execution for execution in self._executions if not execution.was_sent]
 
+    def list_unsent_computers(self) -> set[AbstractComputer]:
+        """Returns the set of computers having at least one unsent execution"""
+        return {exe.computer for exe in self.list_unsent_executions()}
 
     def _launch_wait_executions(self, delay: float, rerun: bool,
                                 replace_failed_executions: bool = False, sequential: bool = False) -> None:

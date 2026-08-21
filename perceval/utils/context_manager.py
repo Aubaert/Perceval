@@ -29,7 +29,7 @@
 
 import sys
 from types import TracebackType
-from typing import Callable
+from typing import Callable, Iterable
 
 from .inspection import has_arguments
 
@@ -139,3 +139,16 @@ def encapsulate_managers(outer_manager: ContextManager, inner_manager: ContextMa
         exit_method = inner_manager.__exit__ if hasattr(inner_manager, "__exit__") else None
         inner_manager = ContextManager(enter_method, exit_method)
     return ContextManagerDecorator(inner_manager, outer_manager.__enter__, outer_manager.__exit__)
+
+
+def encapsulate_manager_list(managers: Iterable[ContextManager]) -> ContextManager:
+    """
+    Combines many context managers, so that the first given manager is the outermost manager, and the last one the innermost one.
+    :param managers: The managers that will be combined into one
+    :return: A new context manager that combines all given managers
+    """
+    manager = ContextManager()  # Allow empty list
+    for sub_manager in managers:
+        manager = encapsulate_managers(manager, sub_manager)
+
+    return manager

@@ -35,15 +35,15 @@ from .command import Command
 
 
 class Computation:
+    """
+    Descriptor of what we want to compute.
+    This is meant to be fully independent of how we will get the results for it
+
+    :param command: A command to do, describing what kind of results we want and the allowed parameters
+    :param experiment: The Experiment we want to compute results for
+    """
 
     def __init__(self, command: Command, experiment: Experiment):
-        """
-        Descriptor of what we want to compute.
-        This is meant to be fully independent of how we will get the results for it
-
-        :param command: A command to do, describing what kind of results we want and the allowed parameters
-        :param experiment: The Experiment we want to compute results for
-        """
         self.command = command
         self.experiment = experiment
         self.parameters: dict[str, Any] = dict()

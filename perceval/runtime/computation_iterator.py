@@ -160,6 +160,15 @@ class ComputationIterator:
                 raise KeyError(f"Received unknown iteration key: {key}")
         return computation
 
+    def add_params(self, *args, **kwargs) -> None:
+        """
+        Adds or replace parameters of the common computation with the given values, following the signature given by the command
+
+        :param args: The user given positional arguments
+        :param kwargs: The user given keyword arguments
+        """
+        self.base_computation.add_params(*args, **kwargs)
+
     def validate(self) -> bool:
         # Already done by the _check_iteration at construction for other computations
         return self.base_computation.validate()
