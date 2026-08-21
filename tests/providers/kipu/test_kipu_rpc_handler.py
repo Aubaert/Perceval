@@ -159,7 +159,7 @@ def test_handler_resolves_backend_id():
 
 def test_missing_qhub_raises_clear_error(monkeypatch):
     monkeypatch.setitem(sys.modules, "qhub.api.quantum", None)
-    with pytest.raises(ImportError, match=r"pip install perceval\[kipu\]"):
+    with pytest.raises(ImportError, match=r"pip install 'perceval-quandela\[kipu\]'"):
         kipu_mod._import_qhub()
 
 

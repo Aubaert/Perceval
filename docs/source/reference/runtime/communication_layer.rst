@@ -27,7 +27,7 @@ An implementation must provide four groups of operations:
 
 * Platform discovery through :meth:`get_specs()`, :meth:`get_commands()`, :meth:`get_performances()`, and
   :meth:`get_remote_status()`.
-* Job submission through :meth:`send()`, which returns a provider-defined remote identifier.
+* Job submission through :meth:`send()`, which returns a serializable provider-defined remote identifier.
 * Job monitoring through :meth:`get_job_status()` and :meth:`get_results()`.
 * Resource management through :meth:`get_availability()` and :meth:`cancel()`.
 

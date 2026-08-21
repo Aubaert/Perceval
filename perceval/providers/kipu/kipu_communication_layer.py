@@ -35,6 +35,21 @@ from .kipu_rpc_handler import KipuRPCHandler
 
 
 class KipuCommunicationLayer(RPCBasedCommunicationLayer):
+    """Communication layer for the Kipu Quantum Hub.
+
+    It requires the optional ``qhub-api`` dependency, available through Perceval's ``[kipu]`` extra.
+
+    :param platform_name: Hub backend ID or supported alias, such as ``"quandela.sim.belenos"``.
+    :param token: Kipu Personal Access Token (PAT). When omitted, use
+        :class:`~perceval.providers.kipu.kipu_config.KipuConfig`, environment credentials, or
+        credentials created by ``qhubctl login``.
+    :param organization_id: Optional Kipu organization. When omitted, use
+        :class:`~perceval.providers.kipu.kipu_config.KipuConfig` or the personal account associated
+        with the credentials.
+    :param url: Optional Hub base URL. When omitted, use
+        :class:`~perceval.providers.kipu.kipu_config.KipuConfig` or the qhub default endpoint.
+    :param proxies: Mapping of protocols to proxy URLs.
+    """
 
     def __init__(self,
                  platform_name: str,

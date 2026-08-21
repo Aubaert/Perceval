@@ -6,5 +6,6 @@ RemoteConfig
    It is possible to use the :code:`RemoteConfig` without saving it, in which case it has a script-bound memory.
 
 .. autoclass:: perceval.runtime.remote_config.RemoteConfig
+   :noindex:
    :members:
    :inherited-members:

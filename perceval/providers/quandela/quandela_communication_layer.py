@@ -36,6 +36,16 @@ from .rpc_handler import RPCHandler
 
 
 class QuandelaCommunicationLayer(RPCBasedCommunicationLayer):
+    """
+    A communication layer able to target Quandela provided platforms.
+
+    :param name: The name of the target platform.
+    :param token: An authentification token to connect to the platform.
+       Leave empty to use the one defined in the :class:`RemoteConfig`
+    :param url: The URL of the platform. Leave empty to use the one defined in the :class:`RemoteConfig`
+       (or the default one if it has never been changed)
+    :param proxies: dictionary mapping protocol to the URL of the proxy
+    """
 
     def __init__(self, name: str, token: str = None, url: str = None, proxies: dict[str, str] = None):
         super().__init__(RPCHandler(name, url, token, proxies))

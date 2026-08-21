@@ -38,7 +38,7 @@ from .kipu_config import KipuConfig
 
 _MISSING_QHUB_MSG = (
     "The Kipu Quantum Hub provider requires the 'qhub-api' package. "
-    "Install it with: pip install perceval[kipu]"
+    "Install it with: pip install 'perceval-quandela[kipu]'"
 )
 
 _SIM_BELENOS = "quandela.sim.belenos"

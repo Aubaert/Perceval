@@ -37,7 +37,10 @@ ORGANIZATION_ID_KEY = "organization_id"
 class KipuConfig(AbstractRemoteConfig):
     """Handle the remote configuration for the Kipu API.
 
-    :param persistent_data: The persistent data access to use. In a standard environment, always use the default.
+    Tokens are read from the in-memory cache, the ``KIPU_CLOUD_TOKEN`` environment variable, or
+    persistent Perceval configuration. The Hub URL, proxies, and optional organization ID can also
+    be stored. If no token is found, the communication layer lets ``qhub-api`` resolve credentials,
+    including credentials created by ``qhubctl login``.
     """
 
     _token_env_var = TOKEN_ENV_VAR
@@ -53,7 +56,6 @@ class KipuConfig(AbstractRemoteConfig):
 
     # TODO: use the `qhubctl login` file to store the token?
 
-
     @classmethod
     def set_organization_id(cls, organization_id: str | None) -> None:
         """Set an organization id in the configuration cache. It is not saved on disk before the `save` method
@@ -64,7 +66,7 @@ class KipuConfig(AbstractRemoteConfig):
         cls._organization_id = organization_id
 
     def get_organization_id(self) -> str | None:
-        """Search a valid organization id from the environment, put it in cache and return it.
+        """Find the configured organization ID, cache it, and return it.
 
         The priority for the organization id search is as follows:
         * An organization id already in cache (e.g. set by the user or already found in a previous call)

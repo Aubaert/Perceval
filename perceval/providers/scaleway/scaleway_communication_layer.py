@@ -35,11 +35,25 @@ from .scaleway_rpc_handler import RPCHandler
 
 
 class ScalewayCommunicationLayer(RPCBasedCommunicationLayer):
+    """Communication layer for platforms exposed through Scaleway QaaS.
+
+    Scaleway uses explicit sessions. Starting and stopping :class:`RemoteComputer` is mandatory for Scaleway.
+
+    :param platform_name: Name of the target Scaleway QaaS platform.
+    :param project_id: UUID of the Scaleway project that owns jobs and sessions.
+    :param token: Scaleway API secret key. When omitted, use :class:`ScalewayConfig` token.
+    :param max_idle_duration_s: Maximum session inactivity in seconds before termination.
+    :param max_duration_s: Maximum total session duration in seconds.
+    :param deduplication_id: Optional identifier used to reuse a matching active session.
+    :param url: Scaleway API URL. When omitted, use :class:`ScalewayConfig` url.
+    :param proxies: Mapping of protocols to proxy URLs.
+    :param provider_name: Platform provider name. When omitted, use :class:`ScalewayConfig` provider.
+    """
 
     def __init__(self,
                  platform_name: str,
                  project_id: str,
-                 token: str,
+                 token: str = None,
                  max_idle_duration_s: int = 1200,
                  max_duration_s: int = 3600,
                  deduplication_id: str = None,
@@ -62,17 +76,20 @@ class ScalewayCommunicationLayer(RPCBasedCommunicationLayer):
         get_logger().info(f"Connected to Scaleway Cloud platform {platform_name}", channel.general)
 
     def start_session(self) -> None:
+        """Create or reuse the configured Scaleway QaaS session."""
         self._rpc_handler.create_session(
-            max_duration_s=self._max_idle_duration_s,
+            max_duration_s=self._max_duration_s,
             max_idle_duration_s=self._max_idle_duration_s,
             deduplication_id=self._deduplication_id,
         )
 
     def stop_session(self) -> None:
+        """Terminate the attached session while leaving its jobs accessible."""
         self._rpc_handler.terminate_session()
         get_logger().info("Stop Scaleway Session", channel.general)
 
     def delete_session(self) -> None:
+        """Delete the attached session and its jobs from Scaleway QaaS."""
         self._rpc_handler.delete_session()
         get_logger().info(
             "Stop (if not already) and revoke Scaleway Session", channel.general

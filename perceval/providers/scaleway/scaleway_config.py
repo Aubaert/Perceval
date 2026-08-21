@@ -37,10 +37,12 @@ PROVIDER_KEY = "provider_name"
 class ScalewayConfig(AbstractRemoteConfig):
     """Handle the remote configuration for the Scaleway API.
 
-    Note: the ``secret_key`` argument from the Scaleway classes is stored under the name ``token`` for coherence with
-    the other provider configs.
+    Tokens are read from the in-memory cache, the ``SCALEWAY_CLOUD_TOKEN`` environment variable,
+    or persistent Perceval configuration. The API URL, proxies, and default platform provider can
+    also be stored.
 
-    :param persistent_data: The persistent data access to use. In a standard environment, always use the default.
+    The ``secret_key`` argument used by the Scaleway API is stored under the name ``token`` for
+    consistency with the other provider configurations.
     """
 
     _token_env_var = TOKEN_ENV_VAR
@@ -65,7 +67,7 @@ class ScalewayConfig(AbstractRemoteConfig):
         cls._provider_name = provider_name
 
     def get_provider(self) -> str:
-        """Search a valid provider from the environment, put it in cache and return it.
+        """Find the configured default platform provider, cache it, and return it.
 
         The priority for the provider search is as follows:
         * A provider already in cache (e.g. set by the user or already found in a previous call)

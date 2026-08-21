@@ -132,11 +132,11 @@ The snippets use the following imports (and placeholder values :code:`TOKEN` and
               analyzer.compute()
 
 .. note::
-   :code:`LocalJob` and :code:`RemoteJob` both become :code:`Execution`; whether the execution is local or remote is
-   determined by its computer, allowing both remote and local :code:`Execution` to be used in :code:`ExecutionGroup`.
+   :code:`LocalJob` and :code:`RemoteJob` both become :ref:`Execution`; whether the execution is local or remote is
+   determined by its computer, allowing both remote and local :ref:`Execution` to be used in :ref:`ExecutionGroup`.
 
 .. warning::
-   Already stored :code:`JobGroup` won't be loaded automatically when using the same name in an :code:`ExecutionGroup`
+   Already stored :code:`JobGroup` won't be loaded automatically when using the same name in an :ref:`ExecutionGroup`
    since the inner representation and storage location have changed.
 
 Note that the :code:`with computer.acquire()` context is not mandatory,
@@ -148,17 +148,18 @@ Noise and Experiment
 
 The :ref:`NoiseModel` used to be an attribute of the :ref:`Experiment` class.
 While this is still possible, and should still work,
-it is strongly advised to set this as a member of the :code:`Computer` that will execute the computation.
+it is strongly advised to set this as a member of the :ref:`Computer` that will execute the computation.
 
 RemoteProcessor vs RemoteComputer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A few things have been removed between the :code:`RemoteProcessor` and the :code:`RemoteComputer`. Here is a list of changes:
+A few things have been removed between the :code:`RemoteProcessor` and the :ref:`RemoteComputer`. Here is a list of changes:
+
 - The :code:`name` attribute doesn't exist anymore, so platforms can no longer be changed on-the-fly
-- The :meth:`get_rpc_handler()` method no longer exists as :code:`RemoteComputer` do not have to rely on it.
+- The :meth:`get_rpc_handler()` method no longer exists as :ref:`RemoteComputer` do not have to rely on it.
   Using a :code:`RPCHandler` manually should not be done anymore.
 - The :meth:`resume_job()` method no longer exists.
-  To retrieve an :code:`Execution` from the cloud, it must have been serialized before (manually, or automatically by using an :code:`ExecutionGroup`)
+  To retrieve an :ref:`Execution` from the cloud, it must have been serialized before (manually, or automatically by using an :ref:`ExecutionGroup`)
 
 
 Breaking changes in Perceval 1.2.3
