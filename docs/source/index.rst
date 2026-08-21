@@ -81,7 +81,6 @@ Perceval is used in several higher-level projects (non-exhaustive list):
    reference/algorithm/index
    reference/backends/index
    reference/components/index
-   reference/error_mitigation
    reference/providers/index
    reference/rendering/index
    reference/runtime/index

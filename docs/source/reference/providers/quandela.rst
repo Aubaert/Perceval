@@ -1,7 +1,8 @@
-Quandela provider
-^^^^^^^^^^^^^^^^^
+Quandela
+^^^^^^^^
 
-Quandela is Perceval's historical provider. It offers all the possibilities that Perceval can do.
+`Quandela Cloud <https://cloud.quandela.com/>`_ provides access to physical and emulated quantum processing units.
+It is Perceval's historical provider and offers all the capabilities that Perceval can do.
 
 QuandelaCommunicationLayer
 ==========================

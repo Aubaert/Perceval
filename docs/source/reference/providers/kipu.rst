@@ -1,5 +1,5 @@
-Kipu Quantum Hub provider
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Kipu Quantum Hub
+^^^^^^^^^^^^^^^^
 
 The `Kipu Quantum Hub <https://dashboard.hub.kipu-quantum.com/>`_ brokers quantum jobs to multiple providers.
 Perceval can use it to run Quandela photonic backends through a :class:`KipuCommunicationLayer

@@ -1,5 +1,5 @@
-Scaleway provider
-^^^^^^^^^^^^^^^^^
+Scaleway
+^^^^^^^^
 
 `Scaleway Quantum as a Service <https://www.scaleway.com/en/quantum-as-a-service/>`_ provides access to physical and
 emulated quantum processing units. Perceval connects to a Scaleway platform through a

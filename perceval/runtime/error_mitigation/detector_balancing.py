@@ -43,7 +43,7 @@ from perceval.serialization import Serialization
 class DetectorBalancing(AbstractMitigation):
     """
     A mitigation process that adjusts the probabilities of each output state based on the output
-    loss and number of photons in each mode.
+    loss, detector models, and number of photons in each mode.
     """
     # Hypotheses for this mitigation to work:
     #   - the detectors only model photon losses (no dark count)
