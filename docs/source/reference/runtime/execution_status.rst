@@ -8,7 +8,7 @@ ExecutionStatus
 An :ref:`Execution` object contains a lot of metadata on top of the computation results a user wants to get. These can be
 retrieved from the :code:`ExecutionStatus` object every execution contains.
 
->>> s = my_job.status  # s is a JobStatus instance
+>>> s = my_execution.status  # s is an ExecutionStatus instance
 >>> if s.completed:
 ...    print(f"My job lasted {s.duration} seconds.")
 My job lasted 37 seconds.

@@ -40,7 +40,7 @@ from perceval.utils.constants import KEY_JOB_NAME, KEY_JOB_CONTEXT, KEY_RESULT_M
     KEY_COMMAND, KEY_MAX_SHOTS, KEY_MAX_SAMPLES
 from perceval.utils.logging import channel, get_logger
 
-from .execution_status import JobStatus, RunningStatus
+from .execution_status import ExecutionStatus, RunningStatus
 from .command import Command, CommandFactory
 from .platform_specs import PlatformSpecs
 from .payload_updater import PayloadUpdater
@@ -112,7 +112,7 @@ class CommunicationLayer(ABC):
         pass
 
     @abstractmethod
-    def get_job_status(self, remote_id: RemoteId, refresh_errors: int = 0) -> JobStatus | None:
+    def get_job_status(self, remote_id: RemoteId, refresh_errors: int = 0) -> ExecutionStatus | None:
         """Retrieve the current status of a remote job.
 
         Returning ``None`` signals a transient refresh failure. :class:`RemoteComputer` keeps the
@@ -314,14 +314,14 @@ class RPCBasedCommunicationLayer(CommunicationLayer):
             else:  # If the status code is any other error, it is considered unrecoverable
                 raise error
 
-    def get_job_status(self, remote_id: RemoteId, refresh_errors: int = 0) -> JobStatus | None:
+    def get_job_status(self, remote_id: RemoteId, refresh_errors: int = 0) -> ExecutionStatus | None:
         try:
             response = self._rpc_handler.get_job_status(remote_id)
         except (HTTPError, ConnectionError) as error:
             self._handle_status_error(error, remote_id, refresh_errors)
             return None
 
-        job_status = JobStatus()
+        job_status = ExecutionStatus()
         job_status.status = RunningStatus.from_server_response(_retrieve_from_response(response, 'status'))
         if job_status.running or job_status.completed:
             job_status.update_progress(_retrieve_from_response(response, 'progress', 0., float),
@@ -333,7 +333,7 @@ class RPCBasedCommunicationLayer(CommunicationLayer):
         return job_status
 
     @staticmethod
-    def _extract_job_times(status: JobStatus, response: dict) -> None:
+    def _extract_job_times(status: ExecutionStatus, response: dict) -> None:
         creation_datetime = _retrieve_from_response(response, 'creation_datetime', 0., float)
 
         start_datetime = 0.

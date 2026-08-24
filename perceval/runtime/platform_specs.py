@@ -41,15 +41,15 @@ DEFAULT_MIN_VERSION = "0.10.0"
 
 class PlatformSpecs(dict):
     """
-    This class represents the specs of any RemoteProcessor.
+    This class represents the specs of any RemoteComputer.
     It guarantees that some common fields exist by giving some default values.
 
     Common fields are accessible through properties, and should be accessed through them.
-    If a given common field is not filled by the processor, it will return None or a default value of the correct type.
-    If a given RemoteProcessor specs contain a field unknown to this class, it can still be accessed through the dict item syntax
+    If a given common field is not filled by the computer, it will return None or a default value of the correct type.
+    If a given RemoteComputer specs contain a field unknown to this class, it can still be accessed through the dict item syntax
 
-    >>> rp = RemoteProcessor(...)
-    >>> rs = rp.specs  # This is a PlatformSpecs object
+    >>> rc = RemoteComputer(...)
+    >>> rs = rc.specs  # This is a PlatformSpecs object
     >>> pdisplay(rs.architecture)
     >>> print(rs["this_platform_specific_spec"])
 
@@ -66,7 +66,7 @@ class PlatformSpecs(dict):
 
     def __getitem__(self, item):
         if hasattr(self, item):
-            get_logger().warn(f"Getting {item} from a RemoteProcessor specs should be done using `specs.{item}`"
+            get_logger().warn(f"Getting {item} from a PlatformSpecs should be done using `specs.{item}`"
                               "as it is a common spec key", channel.user)
             return getattr(self, item)
         return self._getitem(item)
@@ -84,8 +84,8 @@ class PlatformSpecs(dict):
             * optical components
             * detectors if they are imperfect
 
-        :return: The experiment representing the physical hardware of the RemoteProcessor,
-            or None if the RemoteProcessor isn't linked to a hardware chip,
+        :return: The experiment representing the physical hardware of the RemoteComputer,
+            or None if the RemoteComputer isn't linked to a hardware chip,
         """
         if "architecture" in self:
             return self._getitem("architecture")
@@ -264,7 +264,7 @@ class PlatformSpecs(dict):
     def parameters(self) -> dict[str, str]:
         """
         :return: A dictionary containing the possible parameters of the platform.
-            * The key must be given to the platform using the :code:`set_parameters()` method of the RemoteProcessor.
+            * The key must be given to the platform using the :code:`set_parameters()` method of the RemoteComputer.
             * The value is a description of what the parameter does.
         """
         return self.get("parameters", {})

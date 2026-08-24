@@ -109,7 +109,7 @@ class Execution:
     @property
     def job_group_name(self) -> str | None:
         """
-        The job group name
+        The execution group name
         """
         return self._job_group_name
 

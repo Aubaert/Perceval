@@ -107,15 +107,15 @@ class ComputationIterator:
                     assert isinstance(param_value, Number), \
                         f"Iteration: circuit parameters have to be numerical values (got {param_value})"
                     assert param_name in self.experiment.get_circuit_parameters(), \
-                        f"Iteration: circuit parameter {param_name} does not exist in processor"
+                        f"Iteration: circuit parameter {param_name} does not exist in experiment"
             elif key == 'input_state':
                 assert val.m == self.experiment.m, \
-                    f"Iteration: input state and processor size mismatch (processor size is {self.experiment.m})"
+                    f"Iteration: input state and experiment size mismatch (experiment size is {self.experiment.m})"
                 self.experiment.check_input(iter_params['input_state'])
 
     def add_iteration(self, **kwargs):
         """
-        Add a single iteration to future jobs.
+        Add a single iteration to future executions.
 
         :param kwargs: List of accepted keywords:
 

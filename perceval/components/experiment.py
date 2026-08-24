@@ -67,11 +67,11 @@ class Experiment:
     - Ports to define groups of modes
     - Heralds
     - A post-selection method
-    - A NoiseModel
+    - A NoiseModel (deprecated)
 
     :param m_circuit: Number of spatial modes (int), first part of the circuit (Circuit) or None.
                       If a circuit is passed, its size is used as the experiment size.
-    :param noise: A `NoiseModel`
+    :param noise: (deprecated) A `NoiseModel`
     :param name: The experiment name
     """
 
@@ -204,7 +204,7 @@ class Experiment:
     def set_postselection(self, postselect: PostSelect | str):
         r"""
         Set a logical post-selection function. Along with the heralded modes, this function has an impact
-        on the logical performance of the processor holding this experiment
+        on the logical performance of the results when computing using this experiment
 
         :param postselect: Sets a post-selection function.
         """
@@ -393,7 +393,7 @@ class Experiment:
         self._has_td = self._has_td or experiment._has_td
         if experiment.heralds:
             # adding the same experiment component again renders incorrect heralds if not copied
-            # This concerns our gate based processors from catalog which has no input params
+            # This concerns our gate based experiments from catalog which has no input params
             get_logger().debug("  Force copy during experiment compose", channel.general)
             experiment = experiment.copy()
 
@@ -842,6 +842,16 @@ class Experiment:
     def in_heralds(self) -> dict[int, int]:
         return {port_range[0]: port.expected for port, port_range in self._in_ports.items() if isinstance(port, Herald)}
 
+    def remove_heralded_modes(self, s: FockState) -> FockState:
+        if self.heralds:
+            s = s.remove_modes(list(self.heralds.keys()))
+        return s
+
+    def remove_in_heralded_modes(self, s: FockState) -> FockState:
+        if self.in_heralds:
+            s = s.remove_modes(list(self.in_heralds.keys()))
+        return s
+
     def check_input(self, input_state: FockState):
         r"""Check if a basic state input matches with the current experiment configuration"""
         assert self.m_in, "A circuit has to be set before the input state"
@@ -880,6 +890,10 @@ class Experiment:
 
     @dispatch(AnnotatedFockState)
     def with_input(self, input_state: AnnotatedFockState) -> None:
+        assert self.circuit_size, "A circuit has to be set before the input state"
+        assert input_state.m == self.circuit_size, "All modes must be given when using an AnnotatedFockState as input " \
+                                                   "(including heralded ones)"
+
         if input_state.has_polarization:
             self._input_state = input_state
             self._input_changed()

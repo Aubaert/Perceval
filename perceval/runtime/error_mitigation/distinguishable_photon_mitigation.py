@@ -48,7 +48,7 @@ class DistinguishablePhotonMitigation(AbstractMitigation):
     Only FockState inputs are supported.
     All output states having more than the input number of photons are filtered out.
 
-    Mitigates errors associated with noise photons errors (distinguishability and g2) by preparing jobs with fewer
+    Mitigates errors associated with noise photons errors (distinguishability and g2) by preparing computations with fewer
     photons and recombining them through corrections based on the partial distinguishability 'orthogonal bad bits' model.
 
     :param order: Extent of photon error mitigation. If an integer is given,

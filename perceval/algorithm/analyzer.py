@@ -50,7 +50,7 @@ class Analyzer(AAlgorithm, metaclass=ProcessorCompatibilityMeta):
                           * a mapping {FockState: name}
                           * the string "*" meaning oll possible target states are generated
     :param mapping: optional mapping {FockState: name} used for display
-    :param kwargs: as the Analyzer internally uses a Sampler instance, it needs a "max_shots_per_call" value
+    :param kwargs: as the Analyzer internally uses an ExecutionFactory, it needs a "max_shots_per_call" value
     """
 
     def __init__(self,

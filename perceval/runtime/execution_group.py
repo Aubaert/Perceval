@@ -54,9 +54,9 @@ class ExecutionGroup:
     automatically stored with the archive serialization system.
 
     The ExecutionGroup class can perform various tasks such as:
-    - Saving information for a collection of jobs, whether they have been sent to the cloud or not.
-    - Running jobs within the group either in parallel or sequentially.
-    - Rerunning failed jobs within the group.
+    - Saving information for a collection of executions, whether they have been sent to the cloud or not.
+    - Running executions within the group either in parallel or sequentially.
+    - Rerunning failed executions within the group.
     - Retrieving all results at once.
 
     :param name: Name uniquely identifying the group on disk.
@@ -121,7 +121,7 @@ class ExecutionGroup:
         self.modified_date = datetime.now()
         archive = OutputArchive()
         Serialization.serialize(self, archive)
-        # TODO: rather than serializing self, should we insert one value for each job into the archive and store only that?
+        # TODO: rather than serializing self, should we insert one value for each execution into the archive and store only that?
         # TODO: use json format so it is "more" readable? Compress? Leave the choice to the user?
         self._PERSISTENT_DATA.write_file(self._file_path, archive.to_text(compress=True), FileFormat.TEXT)
 
@@ -252,7 +252,7 @@ class ExecutionGroup:
         """
         Delete all saved groups created before a date.
 
-        :param del_before_date: datetime of the oldest job group to keep. Anterior groups will be deleted.
+        :param del_before_date: datetime of the oldest execution group to keep. Anterior groups will be deleted.
         """
         names = [name for name in cls.list_locally_saved() if cls(name).created_date < del_before_date]
         if not names:
@@ -307,13 +307,13 @@ class ExecutionGroup:
     def _launch_wait_executions(self, delay: float, rerun: bool,
                                 replace_failed_executions: bool = False, sequential: bool = False) -> None:
         """
-        Launches or reruns jobs in the group on Cloud in a parallel/sequential manner.
+        Launches or reruns executions in the group on Cloud in a parallel/sequential manner.
 
         :param delay: number of seconds to wait between the launch of two consecutive executions
         :param rerun: if True rerun failed executions or run unsent executions
         :param replace_failed_executions: replace the rerun executions in the ExecutionGroup,
          else keep the failed in addition of the rerun ones
-        :param sequential: if True, only one execution is run at a time, including if several tokens have job availability
+        :param sequential: if True, only one execution is run at a time, including if several tokens have execution availability
         """
         executions_to_run = (self.list_unsuccessful_executions() if rerun else self.list_unsent_executions())
         awaited = set()
@@ -374,7 +374,7 @@ class ExecutionGroup:
         Launches the unsent executions in the group in a sequential manner with a
         user-specified delay between the completion of one execution and the start of the next.
 
-        :param delay: number of seconds to wait between launching jobs on cloud
+        :param delay: number of seconds to wait between launching executions on cloud
         """
         self._launch_wait_executions(delay, rerun=False, sequential=True)
 
@@ -383,9 +383,9 @@ class ExecutionGroup:
         Reruns Failed executions in the group in a sequential manner with a user-specified delay between the
         completion of one execution and the start of the next.
 
-        :param delay: number of seconds to wait between re-launching jobs on cloud
-        :param replace_failed_executions: Indicates whether a new job created from a rerun should replace the previously
-                                    failed job (defaults to True).
+        :param delay: number of seconds to wait between re-launching executions on cloud
+        :param replace_failed_executions: Indicates whether a new execution created from a rerun should replace the
+                                          previously failed execution (defaults to True).
         """
         # backward compatibility
         replace_failed_executions = kwargs.pop("replace_failed_jobs", replace_failed_executions)

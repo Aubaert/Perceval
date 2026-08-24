@@ -78,7 +78,7 @@ Note however that default mitigations are still applied remotely if the :code:`m
 >>> remote_computer.use_mitigations_remotely = False
 
 .. warning::
-   When applying the mitigations locally, the mitigated imperfections are taken from when the job was sent,
+   When applying the mitigations locally, the mitigated imperfections are taken from when the execution was sent,
    not when it was executed on the platform, so this parameter should not be modified unless necessary.
 
 .. autoclass:: perceval.runtime.remote_computer.RemoteComputer

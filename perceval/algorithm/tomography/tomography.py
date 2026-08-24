@@ -44,17 +44,16 @@ from ..processor_compatibility import ProcessorCompatibilityMeta
 
 class StateTomography(AAlgorithm, metaclass=ProcessorCompatibilityMeta):
     """
-    Experiment to reconstruct the state of the system by tomography experiment.
+    Algorithm that reconstructs the state of the system by tomography experiment.
 
-    - Adds preparation and measurement circuits to input processor (with the gate operation under study)
+    - Adds preparation and measurement circuits to input experiment (with the gate operation under study)
 
     - Computes parameters required to do state tomography
 
     - Performs Tomography experiment - Computes and Returns density matrices for each input state
 
-    :param operator_processor: A perceval Processor with gate (or operation) on which state tomography
-        needs to be performed.
-
+    :param computer: A perceval Computer that will be used to perform the tomography.
+    :param experiment: An Experiment describing the gate (or operation) on which state tomography will be performed.
     """
 
     def __init__(self, computer: AbstractComputer, experiment: Experiment, **kwargs):
@@ -128,7 +127,7 @@ class StateTomography(AAlgorithm, metaclass=ProcessorCompatibilityMeta):
 
 class ProcessTomography(AProcessTomography):
     """
-    Experiment to reconstruct the process map of the gate operation by tomography experiment.
+    Algorithm that reconstructs the process map of the gate operation by tomography experiment.
 
     - Computes the mathematical tensors/matrices defined by theory required to perform process tomography.
 

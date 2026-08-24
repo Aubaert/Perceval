@@ -68,7 +68,7 @@ strong simulation back-end.
 >>> factory = pcvl.ExecutionFactory(computer, experiment)
 >>> with computer.acquire():  # Good practice - may be used to warm the computer up
 ...     samples = factory.sample_count(10_000)['results']  # Ask to generate 10k samples, and get back only the raw results
-...     probs = sampler.probs()['results']  # Ask for the exact probabilities
+...     probs = factory.probs()['results']  # Ask for the exact probabilities
 >>> print(f"Samples: {samples}")
 >>> print(f"Probabilities: {probs}")
 Samples: {

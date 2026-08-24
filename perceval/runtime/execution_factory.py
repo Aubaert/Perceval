@@ -66,7 +66,7 @@ class ExecutionFactory:
             self.max_shots_per_call = int(self.max_shots_per_call)
             if self.max_shots_per_call < 1:
                 raise RuntimeError('`max_shots_per_call` must be a positive value')
-        # max_shots_per_call must be found in **kwargs when the processor is remote.
+        # max_shots_per_call must be found in **kwargs when the computer is remote.
         # This condition is forced because the user will consume credits on the cloud and needs to set an upper bound
         if computer.is_remote and not self.max_shots_per_call:
             raise RuntimeError('Please input a `max_shots_per_call` value when using a RemoteComputer')
