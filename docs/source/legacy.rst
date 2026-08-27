@@ -161,6 +161,14 @@ A few things have been removed between the :code:`RemoteProcessor` and the :ref:
 - The :meth:`resume_job()` method no longer exists.
   To retrieve an :ref:`Execution` from the cloud, it must have been serialized before (manually, or automatically by using an :ref:`ExecutionGroup`)
 
+Algorithms
+^^^^^^^^^^
+
+The algorithm classes (:ref:`Analyzer`, :ref:`Tomography`) now store a copy of the given :ref:`Experiment`
+(including if it's given as a :code:`Processor`), so any change to it after instantiating the algorithm won't affect
+the results of the algorithm anymore
+(including setting values to the original parameters - that must be done before instantiating the algorithm).
+
 
 Breaking changes in Perceval 1.2.3
 ----------------------------------

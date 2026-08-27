@@ -10,17 +10,13 @@ parallel, rerun unsuccessful executions, monitor their progress, cancel active e
 results at once.
 
 .. warning::
-   Execution groups store their data in the current directory. These files can grow quite large and are not removed
-   automatically.
+   Execution groups store their data in a "execution_groups" directory under the current directory by default.
+   These files can grow quite large and are not removed automatically.
+   They can be removed by hand if they are no longer needed.
 
-   Use one of the following methods to remove groups that are no longer needed:
-
-   * :code:`ExecutionGroup.delete_execution_group(name)`
-   * :code:`ExecutionGroup.delete_execution_groups_date(del_before_date)`
-   * :code:`ExecutionGroup.delete_all_execution_groups()`
-
-   The storage directory can be changed for all subsequently loaded or created groups with
-   :code:`ExecutionGroup.change_storage_path(path)`.
+.. note::
+   The storage directory can be changed at instantiation of an :code:`ExecutionGroup`.
+   An existing group can be retrieved if and only if both the directory and the name match the original values.
 
 Usage example
 -------------
@@ -69,8 +65,8 @@ executions.
    can be used for this purpose.
 
 .. note::
-   Like :ref:`RemoteComputer`, an :code:`ExecutionGroup` is not serialized with your credentials.
-   For automatic deserialization, they must be inserted back using the correct :ref:`RemoteConfig`.
+   Like :ref:`RemoteComputer`, an :code:`ExecutionGroup` is not stored with your credentials.
+   For automatic retrieval of an existing group, they must be inserted back using the correct :ref:`RemoteConfig`.
 
 Executions can also be launched without waiting for them to finish:
 
@@ -84,8 +80,8 @@ Executions can also be launched without waiting for them to finish:
 
 .. warning::
    A computer should not be stopped until all async executions associated to it have finished.
-   Splitting the execution launch and the result retrieval into two scripts requires calling :meth:`start()` and :meth:`stop()`
-   manually.
+   Splitting the execution launch and the result retrieval into two scripts requires calling :meth:`start()`
+   and :meth:`stop()` manually.
 
 Finally, another script can load the group and retrieve its results in insertion order. An entry is :code:`None` when
 the corresponding execution has not completed or its result is unavailable.
