@@ -44,7 +44,7 @@ class Command:
         # Signature is essentially a dict, but the ordering is important
         # Even though python preserves dict order, we prefer not to rely on it
         self.name = name
-        self.signature = signature  # Does a type serialize well? If not, better removing it and delay the check to the execution
+        self.signature = signature
         self.apply_emt = apply_emt
 
     def check(self, parameters: dict[str, Any]):

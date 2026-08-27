@@ -47,6 +47,9 @@ The :ref:`MitigationFactory` provides a standard, recommended order for the miti
    Error mitigation is applied only to :ref:`Commands <Command>` that declare themselves compatible with it.
    Standard probability and sampling commands are compatible.
 
+.. note::
+   The pre and post processing always apply synchronously, no matter what was asked at the :ref:`Execution` level.
+
 Choosing a preset
 -----------------
 
