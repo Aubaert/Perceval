@@ -244,7 +244,7 @@ class AbstractComputer(ABC):
 
             # Step 2: we post-process for the current computation and insert it in the results
             imperfections = self._get_imperfections(original_computation)
-            inserter(self.post_process(original_computation, res, imperfections, self._error_mitigations,
+            inserter(self.post_process(original_computation, res, imperfections, self._get_local_mitigations(),
                                        partial_progress_callable(batch_callback, self.EMT_POST_PROGRESS_START)))
 
             if len(computations) > 1:
