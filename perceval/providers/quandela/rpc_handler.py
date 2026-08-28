@@ -33,6 +33,7 @@ import traceback
 from urllib.parse import quote_plus
 
 import requests
+from perceval.serialization import Serialization
 from perceval.utils.logging import get_logger, channel
 
 _ENDPOINT_PLATFORM_DETAILS = '/api/platform/'
@@ -192,3 +193,10 @@ class RPCHandler:
         """
         endpoint = self.build_endpoint(_ENDPOINT_JOB_AVAILABILITY)
         return self.get_request(endpoint)
+
+
+Serialization.register_class(
+    RPCHandler,
+    ["name", "url", "proxies", "token", "headers", "request_timeout"],
+    tag="QuandelaRPCHandler",
+)

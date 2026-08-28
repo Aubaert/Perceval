@@ -27,32 +27,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-SEP = ":"
-PCVL_PREFIX = f"{SEP}PCVL{SEP}"
-ZIP_PREFIX = f"{PCVL_PREFIX}zip{SEP}"
+# This folder is a perceval-independent library that allows, with a minimum of efforts and a maximum of versatility,
+# to add any class to a serialization register. It serializes their data in a reliable way,
+# especially by storing the repetition of objects through their ids
 
-MATRIX_TAG = "Matrix"
-MATRIXN_TAG = "MatrixN"
-MATRIXS_TAG = "MatrixS"
-CIRCUIT_TAG = "ACircuit"
-COMPONENT_TAG = "Component"
-EXPERIMENT_TAG = "Experiment"
-COMPILED_CIRCUIT_TAG = "CompiledCircuit"
-COMPILED_CIRCUIT_VERSION_TAG = "CompiledCircuitVersion"
-HERALD_TAG = "Herald"
-PORT_TAG = "Port"
-BS_TAG = "BasicState"
-FS_TAG = "FockState"
-NFS_TAG = "NoisyFockState"
-AFS_TAG = "AnnotatedFockState"
-SV_TAG = "StateVector"
-SVD_TAG = "SVDistribution"
-BSD_TAG = "BSDistribution"
-BSC_TAG = "BSCount"
-BSS_TAG = "BSSamples"
-NOISE_TAG = "NoiseModel"
-POSTSELECT_TAG = "PostSelect"
-BS_LAYERED_DETECTOR_TAG = "BSLayeredDetector"
-DETECTOR_TAG = "Detector"
-
-VALUE_NOT_SET = 0x0fffffff  # Maximum writable value
+from .abstract_serializer import ASerializer, PreRecorder
+from .archive import InputArchive, OutputArchive
+from .serialization import Serialization
+from .descriptors import (DescriptorFloat, DescriptorInteger, DescriptorComplex, DescriptorString, DescriptorList,
+                          DescriptorClass, DescriptorNone, DescriptorBool, DescriptorBinary, ADescriptor, PartialRecord)

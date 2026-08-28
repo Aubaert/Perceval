@@ -27,32 +27,33 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-SEP = ":"
-PCVL_PREFIX = f"{SEP}PCVL{SEP}"
-ZIP_PREFIX = f"{PCVL_PREFIX}zip{SEP}"
+from abc import ABC, abstractmethod
+from typing import TypeVar, Callable, TypeAlias, Generic
 
-MATRIX_TAG = "Matrix"
-MATRIXN_TAG = "MatrixN"
-MATRIXS_TAG = "MatrixS"
-CIRCUIT_TAG = "ACircuit"
-COMPONENT_TAG = "Component"
-EXPERIMENT_TAG = "Experiment"
-COMPILED_CIRCUIT_TAG = "CompiledCircuit"
-COMPILED_CIRCUIT_VERSION_TAG = "CompiledCircuitVersion"
-HERALD_TAG = "Herald"
-PORT_TAG = "Port"
-BS_TAG = "BasicState"
-FS_TAG = "FockState"
-NFS_TAG = "NoisyFockState"
-AFS_TAG = "AnnotatedFockState"
-SV_TAG = "StateVector"
-SVD_TAG = "SVDistribution"
-BSD_TAG = "BSDistribution"
-BSC_TAG = "BSCount"
-BSS_TAG = "BSSamples"
-NOISE_TAG = "NoiseModel"
-POSTSELECT_TAG = "PostSelect"
-BS_LAYERED_DETECTOR_TAG = "BSLayeredDetector"
-DETECTOR_TAG = "Detector"
+from .archive import OutputArchive, InputArchive
+from .descriptors import ADescriptor, PartialRecord
 
-VALUE_NOT_SET = 0x0fffffff  # Maximum writable value
+T = TypeVar("T")
+DescriptorType = TypeVar("DescriptorType")
+
+PreRecorder: TypeAlias = Callable[[object], None]
+ClassWriter: TypeAlias = Callable[[T, OutputArchive], PartialRecord]
+DataReader: TypeAlias = Callable[[T, InputArchive, list[tuple[str, int]], int], None]
+ClassReader: TypeAlias = Callable[[InputArchive, ADescriptor, PreRecorder], None]
+
+
+class ASerializer(ABC, Generic[T, DescriptorType]):
+    """A class describing how to serialize an object from another class T, by using a descriptor"""
+    type: T
+    class_tag: str
+    descriptor_type: DescriptorType
+
+    @abstractmethod
+    def write(self, obj: T, ar: OutputArchive) -> PartialRecord:
+        """Makes a Descriptor of the object, and the list of all children that need to be serialized"""
+        pass
+
+    @abstractmethod
+    def read(self, ar: InputArchive, desc: DescriptorType, pre_recorder: PreRecorder) -> T:
+        """Takes a descriptor of the object, and returns a filled instance of the object"""
+        pass

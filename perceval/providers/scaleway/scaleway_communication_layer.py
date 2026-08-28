@@ -28,9 +28,11 @@
 # SOFTWARE.
 
 from perceval.runtime.communication_layer import RPCBasedCommunicationLayer
+from perceval.serialization import InputArchive, Serialization
 from perceval.utils.logging import get_logger, channel
 
 from .scaleway_rpc_handler import RPCHandler
+
 
 class ScalewayCommunicationLayer(RPCBasedCommunicationLayer):
 
@@ -85,3 +87,23 @@ class ScalewayCommunicationLayer(RPCBasedCommunicationLayer):
                                           url = rpc_handler.url,
                                           proxies = rpc_handler.proxies,
                                           provider_name = rpc_handler._provider_name)
+
+
+def _load_scaleway_communication_layer(
+    communication_layer: ScalewayCommunicationLayer,
+    archive: InputArchive,
+    members,
+    version: int,
+):
+    values = {name: index for name, index in members}
+    RPCBasedCommunicationLayer.__init__(communication_layer, archive.create(values.pop("_rpc_handler")))
+    archive.load_attr(communication_layer, list(values.items()))
+
+
+Serialization.register_class(
+    ScalewayCommunicationLayer,
+    class_serial_members_write=lambda communication_layer, archive: archive.save_attr(
+        communication_layer, ["_rpc_handler", "_deduplication_id", "_max_idle_duration_s", "_max_duration_s"]
+    ),
+    class_serial_members_read=_load_scaleway_communication_layer,
+)

@@ -1,5 +1,3 @@
-
-
 # MIT License
 #
 # Copyright (c) 2022 Quandela
@@ -29,18 +27,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-KNOWN_TYPES: dict[str, type] = {}
-
-for t in [int, float, complex, str, bool, list, dict, tuple]:
-    KNOWN_TYPES[t.__name__] = t
+from zlib import compress as zlib_compress, decompress as zlib_decompress
+from base64 import b64encode, b64decode
 
 
-def add_type_deserializer(t: type):
-    global KNOWN_TYPES
-    KNOWN_TYPES[t.__name__] = t
+def b64encoding(obj: bytes) -> str:
+    return b64encode(obj).decode('utf-8')
 
 
-def deserialize_type(serialized_type: str) -> type:
-    if serialized_type in KNOWN_TYPES:
-        return KNOWN_TYPES[serialized_type]
-    raise TypeError(f"Unknown type {serialized_type}")
+def compress_str(obj: str) -> str:
+    serialized_string_compressed = zlib_compress(obj.encode('utf-8'))  # Compress byte to byte
+    return b64encoding(serialized_string_compressed)  # base64 to string
+
+
+def decompress_str(obj: str) -> str:
+    obj = b64decode(obj)
+    return zlib_decompress(obj).decode('utf-8')

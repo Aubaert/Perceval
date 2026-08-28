@@ -27,7 +27,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .job_status import JobStatus, RunningStatus
+from .execution_status import JobStatus, RunningStatus, ExecutionStatus
 from .remote_config import RemoteConfig
 from .check_cancel import cancel_requested
 from .payload_generator import PayloadGenerator

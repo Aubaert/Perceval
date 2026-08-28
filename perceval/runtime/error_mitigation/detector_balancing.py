@@ -37,6 +37,7 @@ from ..computation import Computation
 
 from perceval.utils import NoiseModel
 from perceval.utils.constants import KEY_RESULTS
+from perceval.serialization import Serialization
 
 class DetectorBalancing(AbstractMitigation):
     # Note: we do not know if it behaves correctly with Feef-Forward
@@ -76,3 +77,6 @@ class DetectorBalancing(AbstractMitigation):
         res[KEY_RESULTS].normalize()
 
         return res
+
+
+Serialization.register_class(DetectorBalancing, [])

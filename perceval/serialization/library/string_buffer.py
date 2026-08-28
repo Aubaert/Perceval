@@ -27,32 +27,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-SEP = ":"
-PCVL_PREFIX = f"{SEP}PCVL{SEP}"
-ZIP_PREFIX = f"{PCVL_PREFIX}zip{SEP}"
+class StringBuffer:
+    def __init__(self, value: str):
+        self.s = value
+        self.current = 0
 
-MATRIX_TAG = "Matrix"
-MATRIXN_TAG = "MatrixN"
-MATRIXS_TAG = "MatrixS"
-CIRCUIT_TAG = "ACircuit"
-COMPONENT_TAG = "Component"
-EXPERIMENT_TAG = "Experiment"
-COMPILED_CIRCUIT_TAG = "CompiledCircuit"
-COMPILED_CIRCUIT_VERSION_TAG = "CompiledCircuitVersion"
-HERALD_TAG = "Herald"
-PORT_TAG = "Port"
-BS_TAG = "BasicState"
-FS_TAG = "FockState"
-NFS_TAG = "NoisyFockState"
-AFS_TAG = "AnnotatedFockState"
-SV_TAG = "StateVector"
-SVD_TAG = "SVDistribution"
-BSD_TAG = "BSDistribution"
-BSC_TAG = "BSCount"
-BSS_TAG = "BSSamples"
-NOISE_TAG = "NoiseModel"
-POSTSELECT_TAG = "PostSelect"
-BS_LAYERED_DETECTOR_TAG = "BSLayeredDetector"
-DETECTOR_TAG = "Detector"
+    def __bool__(self):
+        return self.current < len(self.s)
 
-VALUE_NOT_SET = 0x0fffffff  # Maximum writable value
+    def get_next(self) -> str:
+        start = self.current
+        end = self.s.find(' ', start)
+        if end == -1: end = len(self.s)
+        self.current = end + 1
+        return self.s[start:end]
+
+    def get_until_next_token(self, token: str) -> str:
+        start = self.current
+        end = self.s.find(token, start)
+        if end == -1: raise RuntimeError(f"Missing token '{token}' in archive")
+        end += len(token)
+        self.current = end + 1
+        return self.s[start:end]
+
+    def get_n(self, n: int) -> str:
+        start = self.current
+        end = start + n
+        self.current = end + 1
+        return self.s[start:end]
+
+    def get_int(self) -> int:
+        return int(self.get_next())
