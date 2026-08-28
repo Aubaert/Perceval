@@ -57,8 +57,19 @@ def test_data_class():
     Serialization.serialize(a, ar)
 
     assert ar.to_text() == "pcvlar 0 1 0 A_data 42 3 a 1 b 2 c 3 int 10 int 20 int 30"
-
     deser = InputArchive.from_text(ar.to_text())
+    assert Serialization.deserialize(deser) == a
+
+    assert ar.to_json() == {
+        "header": "pcvlar",
+        "archive_version": 0,
+        "roots": [0],
+        "data": [("A_data", "42", "a", "1", "b", "2", "c", "3"),
+                 ("int", "10"),
+                 ("int", "20"),
+                 ("int", "30")]
+    }
+    deser = InputArchive.from_json(ar.to_json())
     assert Serialization.deserialize(deser) == a
 
     class B:
@@ -76,8 +87,19 @@ def test_data_class():
     Serialization.serialize(a, ar)
 
     assert ar.to_text() == "pcvlar 0 1 0 B_test 420 2 a 1 b 2 float 3.14 list 1 3 str 4 test"
-
     deser = InputArchive.from_text(ar.to_text())
+    assert Serialization.deserialize(deser) == a
+
+    assert ar.to_json() == {
+        "header": "pcvlar",
+        "archive_version": 0,
+        "roots": [0],
+        "data": [("B_test", "420", "a", "1", "b", "2"),
+                 ("float", "3.14"),
+                 ("list", "3"),
+                 ("str", "test")]
+    }
+    deser = InputArchive.from_json(ar.to_json())
     assert Serialization.deserialize(deser) == a
 
 

@@ -44,8 +44,15 @@ class ADescriptor(ABC):
 
     @staticmethod
     @abstractmethod
-    def from_txt(s: str):
+    def from_txt(s: StringBuffer):
         raise NotImplementedError()
+
+    def to_txt_list(self) -> list[str]:
+        return [self.to_txt()]
+
+    @classmethod
+    def from_txt_list(cls, s: list[StringBuffer]):
+        return cls.from_txt(s[0])
 
 
 class DescriptorNone(ADescriptor):
@@ -61,6 +68,13 @@ class DescriptorNone(ADescriptor):
         s.get_n(0)
         return DescriptorNone(None)
 
+    def to_txt_list(self) -> list[str]:
+        return []
+
+    @classmethod
+    def from_txt_list(cls, s: list[StringBuffer]) -> "DescriptorNone":
+        return DescriptorNone(None)
+
 
 class DescriptorString(ADescriptor):
     def __init__(self, s: str):
@@ -73,6 +87,13 @@ class DescriptorString(ADescriptor):
     def from_txt(s: StringBuffer) -> "DescriptorString":
         size = s.get_int()
         return DescriptorString(s.get_n(size))
+
+    def to_txt_list(self) -> list[str]:
+        return [self.value]
+
+    @classmethod
+    def from_txt_list(cls, s: list[StringBuffer]) -> "DescriptorString":
+        return DescriptorString(s[0].s)
 
 
 class DescriptorBinary(ADescriptor):
@@ -87,6 +108,13 @@ class DescriptorBinary(ADescriptor):
     def from_txt(s: StringBuffer) -> "DescriptorBinary":
         size = s.get_int()
         return DescriptorBinary(base64.b64decode(s.get_n(size)))
+
+    def to_txt_list(self) -> list[str]:
+        return [base64.b64encode(self.value).decode("utf-8")]
+
+    @classmethod
+    def from_txt_list(cls, s: list[StringBuffer]) -> "DescriptorBinary":
+        return DescriptorBinary(base64.b64decode(s[0].s))
 
 
 class DescriptorBool(ADescriptor):
@@ -142,6 +170,13 @@ class DescriptorComplex(ADescriptor):
     def from_txt(s: StringBuffer) -> "DescriptorComplex":
         return DescriptorComplex(complex(float(s.get_next()), float(s.get_next())))
 
+    def to_txt_list(self) -> list[str]:
+        return [str(self.value.real), str(self.value.imag)]
+
+    @classmethod
+    def from_txt_list(cls, s: list[StringBuffer]) -> "DescriptorComplex":
+        return DescriptorComplex(complex(float(s[0].get_next()), float(s[1].get_next())))
+
 
 class DescriptorList(ADescriptor):
     def __init__(self, l: list[int]):
@@ -157,6 +192,13 @@ class DescriptorList(ADescriptor):
     def from_txt(s: StringBuffer) -> "DescriptorList":
         size = s.get_int()
         return DescriptorList( [ s.get_int() for _ in range(size) ] )
+
+    def to_txt_list(self) -> list[str]:
+        return [str(index) for index in self.value]
+
+    @classmethod
+    def from_txt_list(cls, s: list[StringBuffer]) -> "DescriptorList":
+        return DescriptorList( [ sub.get_int() for sub in s ] )
 
 
 class DescriptorClass(ADescriptor):
@@ -175,6 +217,27 @@ class DescriptorClass(ADescriptor):
         version = s.get_int()
         size = s.get_int()
         return DescriptorClass(version, [ (s.get_next(), s.get_int()) for _ in range(size) ])
+
+    def to_txt_list(self) -> list[str]:
+        version, members = self.value
+        res = [str(version)]
+        for name, value in members:
+            res += [name, str(value)]
+        return res
+
+    @classmethod
+    def from_txt_list(cls, s: list[StringBuffer]) -> "DescriptorClass":
+        version = s[0].get_int()
+
+        members = []
+        member_name = None
+        for member in s[1:]:
+            if member_name is None:
+                member_name = member.get_next()
+            else:
+                members.append( (member_name, member.get_int()) )
+                member_name = None
+        return DescriptorClass( version, members )
 
 
 # (Descriptor of the class, [items it depends on])
