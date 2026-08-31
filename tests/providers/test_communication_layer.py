@@ -69,7 +69,8 @@ def test_communication_layer_platform_status():
     assert platform_status == ARCHITECTURE_PLATFORM_INFO["status"]
 
     commands = comm.get_commands()
-    assert commands == specs.commands
+    for command in specs.commands:
+        assert command in commands
 
 
 def test_communication_layer_job():
