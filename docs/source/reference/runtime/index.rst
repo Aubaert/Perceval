@@ -12,7 +12,6 @@ runtime
    execution
    execution_group
    error_mitigation/index
-   remote_config
    platform_specs
    execution_status
    legacy/index
