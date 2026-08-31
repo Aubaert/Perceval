@@ -27,7 +27,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .scaleway_session import Session
-from .scaleway_rpc_handler import RPCHandler
-from .scaleway_communication_layer import ScalewayCommunicationLayer
-from .scaleway_config import ScalewayConfig
+from ..abstract_config import AbstractRemoteConfig
+
+
+QUANDELA_CLOUD_URL = 'https://api.cloud.quandela.com'
+TOKEN_ENV_VAR = "PCVL_CLOUD_TOKEN"
+
+
+class RemoteConfig(AbstractRemoteConfig):
+    """Handle the remote configuration for Quandela provider.
+
+    :param persistent_data: The persistent data access to use. In a standard environment, always use the default.
+    """
+    _token_env_var = TOKEN_ENV_VAR
+
+    _DEFAULT_URL = QUANDELA_CLOUD_URL

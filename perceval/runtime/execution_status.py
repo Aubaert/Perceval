@@ -295,7 +295,7 @@ class ExecutionStatus:
     def __str__(self) -> str:
         return self._status.name
 
-    def copy_from(self, status: JobStatus):
+    def copy_from(self, status: ExecutionStatus):
         self._status = status._status
         if status._init_time_start:
             self._init_time_start = status._init_time_start
@@ -313,8 +313,8 @@ class ExecutionStatus:
             self._stop_message = status._stop_message
 
     @staticmethod
-    def merge_status(status: list[JobStatus]) -> JobStatus:
-        res = JobStatus()
+    def merge_status(status: list[ExecutionStatus]) -> ExecutionStatus:
+        res = ExecutionStatus()
 
         if len(status) == 0:
             return res

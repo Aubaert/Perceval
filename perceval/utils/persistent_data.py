@@ -212,7 +212,7 @@ class PersistentData:
                 warnings.warn("Cannot read config file")
         return config
 
-    def save_config(self, config: dict):
+    def save_config(self, config: dict) -> None:
         """Save config into persistent data, update any config previously saved
 
         :param config: config to save

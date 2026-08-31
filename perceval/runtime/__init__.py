@@ -28,7 +28,6 @@
 # SOFTWARE.
 
 from .execution_status import JobStatus, RunningStatus, ExecutionStatus
-from .remote_config import RemoteConfig
 from .check_cancel import cancel_requested
 from .payload_generator import PayloadGenerator
 from .payload_updater import PayloadUpdater
@@ -42,5 +41,6 @@ from .simulated_computer import SimulatedComputer
 from .remote_computer import RemoteComputer, CommunicationLayer
 from .execution import Execution
 from .execution_group import ExecutionGroup
+from .platform_specs import PlatformSpecs
 
 from .legacy import *

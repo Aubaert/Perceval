@@ -34,6 +34,8 @@ from datetime import datetime
 from perceval.serialization import InputArchive, Serialization
 from perceval.utils.constants import KEY_VERSION, KEY_PROCESS_ID, KEY_JOB_NAME, KEY_MAX_SHOTS, KEY_MAX_SAMPLES, KEY_PAYLOAD
 
+from .kipu_config import KipuConfig
+
 _MISSING_QHUB_MSG = (
     "The Kipu Quantum Hub provider requires the 'qhub-api' package. "
     "Install it with: pip install perceval[kipu]"
@@ -173,13 +175,16 @@ class KipuRPCHandler:
     :param client: optional pre-built HubQuantumClient (used for testing)
     """
 
-    def __init__(self, platform_name, url=None, token=None, organization_id=None,
-                 proxies=None, client=None):
+    def __init__(self, platform_name, url: str = None, token: str = None, organization_id: str = None,
+                 proxies: dict[str, str] = None, client=None):
+
+        config = KipuConfig()
+
         self._platform_name = platform_name
-        self._url = url
-        self._token = token
-        self._organization_id = organization_id
-        self._proxies = proxies or {}
+        self._url = url or config.get_url()
+        self._token = token or config.get_token() or None  # When None, taken from the environment or the qhubctl
+        self._organization_id = organization_id or config.get_organization_id()
+        self._proxies = proxies or config.get_proxies()
         self._backend_id = _resolve_backend_id(platform_name)
         self._client = client if client is not None else self._build_client()
 
@@ -329,16 +334,16 @@ def _load_kipu_rpc_handler(
     handler.__init__(
         platform_name=values["_platform_name"],
         url=values["_url"],
-        token=values["_token"],
+        token = None, # to be filled by the KipuConfig,
         organization_id=values["_organization_id"],
-        proxies=values["_proxies"],
+        proxies = None # to be filled by the KipuConfig,
     )
 
 
 Serialization.register_class(
     KipuRPCHandler,
     class_serial_members_write=lambda handler, archive: archive.save_attr(
-        handler, ["_platform_name", "_url", "_token", "_organization_id", "_proxies"]
+        handler, ["_platform_name", "_url", "_organization_id"]
     ),
     class_serial_members_read=_load_kipu_rpc_handler,
 )
