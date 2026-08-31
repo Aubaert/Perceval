@@ -138,7 +138,11 @@ class RemoteComputer(AbstractComputer):
 
     def validate_single(self, computation: Computation) -> None:
         super().validate_single(computation)
-        self.check_experiment(computation.experiment)
+        if isinstance(computation, ComputationIterator):
+            for sub_comp in computation:
+                self.check_experiment(sub_comp.experiment)
+        else:
+            self.check_experiment(computation.experiment)
 
         params = computation.parameters
         if "max_samples" in params and "max_shots" in params:
