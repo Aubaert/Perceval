@@ -27,7 +27,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from perceval.runtime.remote_config import AbstractRemoteConfig
+from ..abstract_config import AbstractRemoteConfig
 
 TOKEN_ENV_VAR = "KIPU_CLOUD_TOKEN"
 
@@ -55,6 +55,7 @@ class KipuConfig(AbstractRemoteConfig):
     }
 
     # TODO: use the `qhubctl login` file to store the token?
+
 
     @classmethod
     def set_organization_id(cls, organization_id: str | None) -> None:

@@ -27,19 +27,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from zlib import compress as zlib_compress, decompress as zlib_decompress
-from base64 import b64encode, b64decode
+from ..abstract_config import AbstractRemoteConfig
 
 
-def b64encoding(obj: bytes) -> str:
-    return b64encode(obj).decode('utf-8')
+QUANDELA_CLOUD_URL = 'https://api.cloud.quandela.com'
+TOKEN_ENV_VAR = "PCVL_CLOUD_TOKEN"
 
 
-def compress_str(obj: str) -> str:
-    serialized_string_compressed = zlib_compress(obj.encode('utf-8'))  # Compress byte to byte
-    return b64encoding(serialized_string_compressed)  # base64 to string
+class RemoteConfig(AbstractRemoteConfig):
+    """Handle the remote configuration for Quandela provider.
 
+    :param persistent_data: The persistent data access to use. In a standard environment, always use the default.
+    """
+    _token_env_var = TOKEN_ENV_VAR
 
-def decompress_str(obj: str) -> str:
-    obj = b64decode(obj)
-    return zlib_decompress(obj).decode('utf-8')
+    _DEFAULT_URL = QUANDELA_CLOUD_URL

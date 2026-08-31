@@ -185,6 +185,17 @@ class RemoteComputer(AbstractComputer):
             if 'min_mode_count' in constraints and m < constraints['min_mode_count']:
                 raise RuntimeError(f"Circuit too small ({m} < {constraints['min_mode_count']})")
 
+        # TODO: Check that the component matches what the platform can do
+        # if new_component is not None:
+        #     if isinstance(new_component, Experiment):
+        #         if not new_component.is_unitary:
+        #             raise RuntimeError('Cannot compose a RemoteProcessor with a processor containing non linear components')
+        #         if new_component.has_feedforward:
+        #             raise RuntimeError('Cannot compose a RemoteProcessor with a processor containing feed-forward')
+        #
+        #     elif not isinstance(new_component, IDetector) and not isinstance(new_component, ACircuit):
+        #         raise NotImplementedError("Non linear components not implemented for RemoteProcessors")
+
     def _handle_iterator(self, comp: Computation | ComputationIterator, out: dict | None)\
             -> tuple[dict, Callable[[dict], None]]:
         if out is None:
@@ -393,8 +404,6 @@ def _load_remote_computer(
     members,
     version: int,
 ):
-    if version != 0:
-        raise RuntimeError(f"Unsupported RemoteComputer serialization version {version}")
     values = {name: archive.create(index) for name, index in members}
     computer.__init__(values.pop("_communication_layer"))  # This sets the specs and perfs as usual
     for name, value in values.items():

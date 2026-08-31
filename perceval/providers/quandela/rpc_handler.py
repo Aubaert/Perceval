@@ -34,9 +34,10 @@ from urllib.parse import quote_plus
 
 import requests
 
-from perceval.runtime import RemoteConfig
 from perceval.serialization import Serialization, InputArchive
 from perceval.utils.logging import get_logger, channel
+
+from .remote_config import RemoteConfig
 
 _ENDPOINT_PLATFORM_DETAILS = '/api/platform/'
 _ENDPOINT_PLATFORM_DETAILS_NEW = '/api/platforms/'
@@ -214,14 +215,12 @@ def _load_rpc_handler(
     members,
     version: int,
 ):
-    if version != 0:
-        raise RuntimeError(f"Unsupported QuandelaRPCHandler serialization version {version}")
     values = {name: archive.create(index) for name, index in members}
     handler.__init__(
         name=values["name"],
         url=values["url"],
-        # token = to be filled by RemoteConfig
-        # proxies = to be filled by RemoteConfig,
+        token = None, # to be filled by RemoteConfig
+        proxies = None, # to be filled by RemoteConfig,
     )
     handler.request_timeout = values["request_timeout"]
 

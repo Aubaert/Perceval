@@ -39,7 +39,6 @@ from ..computation import Computation
 from perceval.utils.constants import KEY_RESULTS, KEY_GLOBAL_PERF, KEY_PHYSICAL_PERF
 from perceval.serialization import Serialization
 
-
 class DetectorBalancing(AbstractMitigation):
     """
     A mitigation process that adjusts the probabilities of each output state based on the output
@@ -53,7 +52,6 @@ class DetectorBalancing(AbstractMitigation):
     # One last hypothesis:
     #   - all states are represented in the results (i.e. bunched states are also represented)
     # Not fulfilling this hypothesis will make the maths wrong, but it should still be better than without mitigation
-
 
     APPLY_MIN_PHOTONS = False
     APPLY_LOGICAL_SELECTION = True  # Actually, all we need is "at least", but it's easier to remove everything

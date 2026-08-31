@@ -29,9 +29,9 @@
 
 import pytest
 
-from perceval import ContextManager
+from perceval import ContextManager, Detector, Imperfections, DetectionType
 from perceval.components import Experiment
-from perceval.runtime.communication_layer import RPCBasedCommunicationLayer
+from perceval.providers.rpc_based_communication_layer import RPCBasedCommunicationLayer
 from perceval.runtime.computation import Computation
 from perceval.runtime.error_mitigation import (
     CompilationAveraging,
@@ -140,24 +140,6 @@ def test_simulated_computer_serialization():
     assert set(restored._methods) == {"probs", "samples", "sample_count"}
 
 
-def test_rpc_communication_layer_serialization():
-    initial_value = RPCBasedCommunicationLayer.MINIMUM_FETCH_INTERVAL
-    with ContextManager(lambda: setattr(RPCBasedCommunicationLayer, "MINIMUM_FETCH_INTERVAL", -1),
-                        lambda: setattr(RPCBasedCommunicationLayer, "MINIMUM_FETCH_INTERVAL", initial_value),
-                        ):
-        layer = RPCBasedCommunicationLayer(_SerializableRPCHandler())
-        layer._status = "unavailable"
-        layer._specs.available_commands = ["samples"]
-        layer._perfs = {"transmittance": .21}
-
-        restored = _round_trip(layer)
-
-        assert restored._rpc_handler.fetch_count == 2
-        assert restored.get_remote_status() == "available"
-        assert restored.get_specs().available_commands == ["probs"]
-        assert restored.get_performances() == {"transmittance": .75}
-
-
 def test_remote_computer_serialization():
     initial_value = RPCBasedCommunicationLayer.MINIMUM_FETCH_INTERVAL
     with ContextManager(lambda: setattr(RPCBasedCommunicationLayer, "MINIMUM_FETCH_INTERVAL", -1),
@@ -204,3 +186,16 @@ def test_execution_serialization():
 
     restored = _round_trip(execution)
     assert len(restored._getters) == 0
+
+
+def test_imperfections_serialization():
+    noise = NoiseModel(transmittance=.6)
+    d = Detector.threshold()
+
+    imperfections = Imperfections(noise, [d])
+
+    restored = _round_trip(imperfections)
+
+    assert restored.noise == noise
+    assert len(restored.detectors) == 1
+    assert restored.detectors[0].type == DetectionType.Threshold

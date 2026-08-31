@@ -39,7 +39,6 @@ from perceval.utils.constants import KEY_MAX_SHOTS, KEY_MAX_SAMPLES, KEY_GLOBAL_
     KEY_LOGICAL_PERF, KEY_RESULTS
 from perceval.serialization import Serialization
 
-
 class CompilationAveraging(AbstractMitigation):
     """Reduce sensitivity to a single physical compilation by averaging the results over several compilations.
 

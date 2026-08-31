@@ -28,11 +28,11 @@
 # SOFTWARE.
 from requests import HTTPError
 
-from perceval.runtime.communication_layer import RPCBasedCommunicationLayer
 from perceval.serialization import InputArchive, Serialization
 from perceval.utils.logging import get_logger, channel
 
 from .rpc_handler import RPCHandler
+from ..rpc_based_communication_layer import RPCBasedCommunicationLayer
 
 
 class QuandelaCommunicationLayer(RPCBasedCommunicationLayer):
@@ -70,10 +70,6 @@ def _load_quandela_communication_layer(
     members,
     version: int,
 ):
-    if version != 0:
-        raise RuntimeError(
-            f"Unsupported QuandelaCommunicationLayer serialization version {version}"
-        )
     RPCBasedCommunicationLayer.__init__(communication_layer, archive.create(members[0][1]))
 
 

@@ -115,8 +115,8 @@ class Execution:
 
     @job_group_name.setter
     def job_group_name(self, new_name: str):
-        if not isinstance(new_name, str):
-            raise TypeError("A job group name must be a string")
+        if not isinstance(new_name, str) or len(new_name) == 0:
+            raise TypeError("A job group name must be a non-empty string")
         self._job_group_name = new_name
 
     def set_job_group_name(self, new_name: str):  # TODO: legacy; remove ?
@@ -323,8 +323,6 @@ def _load_execution(
     members,
     version: int,
 ):
-    if version != 0:
-        raise RuntimeError(f"Unsupported Execution serialization version {version}")
     archive.load_attr(execution, members)
     execution._user_cb = None
     if not hasattr(execution, "_getters"):  # Other possibility: store them with initial value

@@ -26,12 +26,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from perceval.runtime.communication_layer import RPCBasedCommunicationLayer
 from perceval.serialization import InputArchive, Serialization
 
 from perceval.utils.logging import get_logger, channel
 
 from .kipu_rpc_handler import KipuRPCHandler
+from ..rpc_based_communication_layer import RPCBasedCommunicationLayer
 
 
 class KipuCommunicationLayer(RPCBasedCommunicationLayer):
@@ -83,10 +83,6 @@ def _load_kipu_communication_layer(
     members,
     version: int,
 ):
-    if version != 0:
-        raise RuntimeError(
-            f"Unsupported KipuCommunicationLayer serialization version {version}"
-        )
     RPCBasedCommunicationLayer.__init__(communication_layer, archive.create(members[0][1]))
 
 
