@@ -30,6 +30,7 @@
 from typing import Any
 
 from .command import Command, CommandFactory
+from .error_mitigation import AbstractMitigation
 from perceval.serialization import Serialization
 from perceval.serialization.library.serializers import SerializerDict
 from perceval.utils import FockState, deprecated, ProcessorType
@@ -317,6 +318,17 @@ class PlatformSpecs(dict):
         # Store as a str so we can serialize it easily
         self["type"] = "simulator" if value == ProcessorType.SIMULATOR else "qpu"
 
+    @property
+    def default_mitigations(self) -> list[AbstractMitigation]:
+        if "default_mitigations" in self:
+            return self._getitem("default_mitigations")
+        return []
+
+    @default_mitigations.setter
+    def default_mitigations(self, value: list[AbstractMitigation]):
+        assert isinstance(value, list)
+        assert all(isinstance(val, AbstractMitigation) for val in value)
+        self["default_mitigations"] = value
 
 class SerializerSpecs(SerializerDict):
     type = PlatformSpecs

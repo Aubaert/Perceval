@@ -109,7 +109,6 @@ class RemoteComputer(AbstractComputer):
         self._custom_noise: NoiseModel | None = None
         self.use_mitigations_remotely: bool = True  # TODO: detect if the target supports mitigations ?
         self._available_jobs = 0
-        # TODO: how to get default mitigations ?
 
     @property
     def noise(self):
@@ -130,6 +129,7 @@ class RemoteComputer(AbstractComputer):
 
     @property
     def performance(self):
+        self._perfs = self._communication_layer.get_performances()
         return self._perfs
 
     @property
@@ -353,8 +353,11 @@ class RemoteComputer(AbstractComputer):
         nm.g2 = 0
         nm.indistinguishability = 1
         lc.noise = nm
-        # TODO: how to get default mitigations ?
-        lc.mitigations = self._error_mitigations
+
+        if self._error_mitigations is not None:
+            lc.mitigations = self._error_mitigations
+        else:
+            lc.mitigations = self.specs.default_mitigations
 
         probs = lc.execute(computation)
         p_above_filter_ns = 0

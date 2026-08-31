@@ -80,6 +80,9 @@ class AbstractComputer(ABC):
 
     @mitigations.setter
     def mitigations(self, error_mitigations: list[AbstractMitigation] | None):
+        if error_mitigations is not None:
+            assert isinstance(error_mitigations, list)
+            assert all([isinstance(e, AbstractMitigation) for e in error_mitigations])
         self._error_mitigations = error_mitigations
 
     def _get_local_mitigations(self) -> list[AbstractMitigation]:
@@ -352,6 +355,7 @@ class AbstractComputer(ABC):
             specs.parameters = self.available_parameters
         specs.type = self.type
         specs.pcvl_version = PMetadata.version()
+        specs.default_mitigations = self.mitigations
         return specs
 
     @property
