@@ -67,7 +67,7 @@ class Experiment:
     - Ports to define groups of modes
     - Heralds
     - A post-selection method
-    - A NoiseModel (deprecated)
+    - A NoiseModel (deprecated, should now be set into the computer)
 
     :param m_circuit: Number of spatial modes (int), first part of the circuit (Circuit) or None.
                       If a circuit is passed, its size is used as the experiment size.

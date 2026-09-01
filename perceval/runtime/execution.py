@@ -44,6 +44,20 @@ from perceval.serialization.library.class_registry import ClassRegistry
 
 
 class Execution:
+    """
+    A class aimed at controlling the execution flow of a computation on a given computer.
+    It provides means to compute synchronously or asynchronously, hiding the complexity of handling intermediate objects.
+
+    Depending on the mitigations that are set into the computer, one or several jobs
+    (i.e. a unit computation on the cloud, or a single simulation call) may be created.
+    This complexity is hidden by this object, but may appear on a provider's cloud interface.
+
+    >>> execution = Execution(computation, computer)
+    >>> res = execution(max_shots = 10000)  # Synchronous call - Computation parameters can be given here
+
+    :param computation: The computation to be executed
+    :param computer: The computer that will execute the computation
+    """
 
     def __init__(self, computation: Computation | ComputationIterator, computer: AbstractComputer):
         self._computation = deepcopy(computation)
@@ -96,7 +110,7 @@ class Execution:
     @property
     def name(self) -> str:
         """
-        The execution name
+        The execution name, that will be used to name generated jobs
         """
         return self._name
 
@@ -109,7 +123,7 @@ class Execution:
     @property
     def job_group_name(self) -> str | None:
         """
-        The execution group name
+        The execution group name, that will be used to give a job group name to the generated jobs
         """
         return self._job_group_name
 
@@ -209,7 +223,7 @@ class Execution:
 
     def execute_sync(self, *args, allow_partial_results: bool = False, **kwargs) -> dict:
         """
-        Execute the execution synchronously.
+        Execute the task synchronously.
 
         :param args: arguments to pass to the task function
         :param allow_partial_results: If True, results will be returned even if there is an error somewhere.

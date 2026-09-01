@@ -2,7 +2,7 @@ Quandela
 ^^^^^^^^
 
 `Quandela Cloud <https://cloud.quandela.com/>`_ provides access to physical and emulated quantum processing units.
-It is Perceval's historical provider and offers all the capabilities that Perceval can do.
+It is Perceval's historical provider and offers all the capabilities that Perceval has.
 
 QuandelaCommunicationLayer
 ==========================
@@ -32,7 +32,7 @@ After configuration, the token and provider name may be omitted from the communi
    Do not persist authentication tokens on shared or public computers. Using an environment variable or the in-memory
    configuration cache avoids writing the token to disk.
 
-.. autoclass:: perceval.runtime.remote_config.RemoteConfig
+.. autoclass:: perceval.providers.quandela.remote_config.RemoteConfig
    :members:
    :inherited-members:
 
