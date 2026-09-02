@@ -38,6 +38,7 @@ from .abstract_component import AComponent
 from .linear_circuit import Circuit
 from .unitary_components import BS, PERM
 from perceval.utils import FockState, BSDistribution
+from perceval.utils.constants import TRANSMISSION_PER_MODE, TRANSMITTANCE_OUT
 from perceval.utils.logging import channel, get_logger
 
 
@@ -336,3 +337,26 @@ def check_heralds_detectors(heralds: dict[int, int] | None, detectors: list[IDet
                     return False
 
     return True
+
+
+def update_detectors(detectors: list[IDetector], output_transmissions: list[float]) -> None:
+    """
+    Updates in-place the given detectors, by changing their efficiency. Only works for Detector type (not BSLayeredPPNR).
+    """
+    output_transmissions = [eff / max(output_transmissions) for eff in output_transmissions]
+
+    for i, (eff, d) in enumerate(zip(output_transmissions, detectors)):
+        if isinstance(d, Detector):
+            # Better to make a new one to wipe off the cache
+            detectors[i] = Detector(d._wires, d.max_detections, eff)
+
+
+def update_detectors_from_perfs(detectors: list[IDetector], perfs: dict) -> None:
+    """
+    Updates in-place the given detectors, by changing their efficiency, taken from the perfs dictionary.
+    """
+    if TRANSMISSION_PER_MODE in perfs:
+        sub_perfs = perfs[TRANSMISSION_PER_MODE]
+        if TRANSMITTANCE_OUT in sub_perfs:
+            detector_efficiencies = sub_perfs[TRANSMITTANCE_OUT]
+            update_detectors(detectors, detector_efficiencies)

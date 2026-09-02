@@ -28,9 +28,10 @@
 # SOFTWARE.
 
 import time
-from copy import deepcopy
+from copy import deepcopy, copy
 from typing import Callable
 
+from .check_cancel import call_and_check_cancel
 from .communication_layer import CommunicationLayer, RemoteId
 from .computation import Computation
 from .abstract_computer import AbstractComputer
@@ -44,7 +45,7 @@ from .payload_generator import PayloadGenerator
 
 from perceval.utils import perf_dict_to_noise, ProgressCallback, NoiseModel, PostSelect, ContextManager
 from perceval.utils.logging import channel, get_logger
-from perceval.components import PortLocation, Experiment
+from perceval.components import PortLocation, Experiment, update_detectors_from_perfs
 from perceval.serialization import Serialization, InputArchive
 
 
@@ -229,18 +230,29 @@ class RemoteComputer(AbstractComputer):
 
     def _execute_command(self, computation: Computation, progress_cb: ProgressCallback = None) -> dict:
         async_getter = self._execute_single_async(computation)
-        # TODO: use the progress callback in the wait function
-        while not async_getter.is_complete:
+        status = async_getter.status
+        while not status.completed:
             time.sleep(1)
+            status = async_getter.status
+            if call_and_check_cancel(progress_cb, status.progress, status.message or ""):
+                async_getter.cancel()
+                break
         return async_getter.get_results()
 
     def _get_imperfections(self, computation: Computation | ComputationIterator) -> Imperfections:
         architecture = self.specs.architecture
         if architecture is not None:
-            detectors = architecture.detectors  # TODO: use the perfs to correct the efficiency automatically ?
+            detectors = copy(architecture.detectors)
+            update_detectors_from_perfs(detectors, self.performance)
         else:
             detectors = computation.experiment.detectors  # Supposes the remote can simulate them
-        return Imperfections(self.noise, detectors)  # We drop experiment.noise in this case (deprecated anyway)
+
+        if computation.experiment.noise is not None:
+            get_logger().warn("Noise given in the Experiment - Mitigations may behave weirdly")
+            noise = computation.experiment.noise
+        else:
+            noise = self.noise
+        return Imperfections(noise, detectors)
 
     def _execute_command_async(self, computation: Computation) -> _RemoteGetter:
         payload = self.prepare_payload(computation)

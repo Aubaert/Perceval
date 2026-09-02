@@ -31,7 +31,7 @@ import time
 from copy import copy
 from typing import TypeAlias
 
-from perceval import AbstractComputer, SimulatedComputer, Experiment, FockState, Computation, BSDistribution, JobStatus, \
+from perceval import AbstractComputer, SimulatedComputer, Experiment, FockState, Computation, BSDistribution, ExecutionStatus, \
     Unitary, BS, PS, NoiseModel, Circuit, Detector, FFCircuitProvider, Command, P, PayloadGenerator, Execution
 from perceval.runtime.computation_iterator import ComputationIterator
 from perceval.runtime.platform_specs import PlatformSpecs
@@ -61,7 +61,7 @@ class ComputerProxy(CommunicationLayer):
             time.sleep(0.1)
         return remote_id.get_results(allow_partial_results=True)
 
-    def get_job_status(self, remote_id: RemoteId, refresh_errors: int = 0) -> JobStatus | None:
+    def get_job_status(self, remote_id: RemoteId, refresh_errors: int = 0) -> ExecutionStatus | None:
         return remote_id.status
 
     def get_remote_status(self) -> str:
