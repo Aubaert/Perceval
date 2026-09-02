@@ -91,13 +91,18 @@ class _RemoteGetter(AsyncGetter):
 
 
 class RemoteComputer(AbstractComputer):
+    """
+    A computer that sends Computations to a remote platform.
+
+    :param communication_layer: A CommunicationLayer used to communicate with the remote computer.
+    """
 
     WARN_INTERVAL = 1800
     INFO_INTERVAL = 10
 
     def __init__(self, communication_layer: CommunicationLayer):
         super().__init__()
-        self._communication_layer = communication_layer  # cloud_access is the communication layer
+        self._communication_layer = communication_layer
         self._commands = {command.name: command for command in communication_layer.get_commands()}
         self._specs = communication_layer.get_specs()
         self._perfs = communication_layer.get_performances()
@@ -133,7 +138,11 @@ class RemoteComputer(AbstractComputer):
 
     def validate_single(self, computation: Computation) -> None:
         super().validate_single(computation)
-        self.check_experiment(computation.experiment)
+        if isinstance(computation, ComputationIterator):
+            for sub_comp in computation:
+                self.check_experiment(sub_comp.experiment)
+        else:
+            self.check_experiment(computation.experiment)
 
         params = computation.parameters
         if "max_samples" in params and "max_shots" in params:
@@ -151,6 +160,9 @@ class RemoteComputer(AbstractComputer):
                              " Use the method experiment.min_detected_photons_filter(value).")
 
     def check_experiment(self, experiment: Experiment) -> None:
+        if experiment.input_state is None:
+            raise ValueError("The experiment has no input_state (call `with_input()`)")
+
         self.check_min_detected_photons_filter(experiment)
 
         constraints = self.specs.constraints
@@ -356,7 +368,7 @@ class RemoteComputer(AbstractComputer):
         Compute an estimate number of required shots given the platform and the user request.
         The circuit, input state, minimum photon filter, and error mitigations are taken into account.
 
-        :param computation: The computation that will be sent with unknown number of samples
+        :param computation: The computation that will be sent with unknown number of samples. It needs to be valid.
         :param nsamples: Number of expected samples of interest
         :param param_values: Key/value pairs for variable parameters inside the circuit. All parameters need to be fixed
             for this computation to run.
@@ -373,7 +385,7 @@ class RemoteComputer(AbstractComputer):
         Compute an estimate number of samples the user can expect given the platform and the user request.
         The circuit, input state, minimum photon filter, and error mitigations are taken into account.
 
-        :param computation: The computation that will be sent with unknown number of shots
+        :param computation: The computation that will be sent with unknown number of shots. It needs to be valid.
         :param nshots: Number of shots the user is willing to consume
         :param param_values: Key/value pairs for variable parameters inside the circuit. All parameters need to be fixed
             for this computation to run.

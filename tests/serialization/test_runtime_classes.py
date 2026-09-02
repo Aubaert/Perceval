@@ -57,7 +57,7 @@ class _SerializableRPCHandler:
         return {
             "status": "available",
             "specs": {
-                "available_commands": ["probs"],
+                "available_commands": ["probs", "samples", "sample_count"],
                 "parameters": {"max_shots": "maximum number of shots"},
             },
             "type": "simulator",
@@ -151,14 +151,13 @@ def test_remote_computer_serialization():
         computer.noise = NoiseModel(transmittance=.6)
         computer.use_mitigations_remotely = False
         computer._commands["not_serialized"] = object()
-        computer._specs.available_commands = ["samples"]
         computer._perfs = {"transmittance": .21}
         computer._available_jobs = 99
 
         restored = _round_trip(computer)
 
-        assert restored.available_commands == ["probs"]
-        assert restored.specs.available_commands == ["probs"]
+        assert restored.available_commands == ["probs", "samples", "sample_count"]
+        assert restored.specs.available_commands == ["probs", "samples", "sample_count"]
         assert restored.performance == {"transmittance": .75}
         assert restored.available_jobs == 1
         assert restored.parameters == {"max_shots": 20}

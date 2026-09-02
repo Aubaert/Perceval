@@ -35,11 +35,12 @@ from .computation import Computation
 from .computation_iterator import ComputationIterator
 from .command import Command, CommandFactory
 from .error_mitigation import *
-from .abstract_computer import AbstractComputer
+from .abstract_computer import AbstractComputer, acquire
 from .local_computer import LocalComputer
 from .simulated_computer import SimulatedComputer
 from .remote_computer import RemoteComputer, CommunicationLayer
 from .execution import Execution
+from .execution_factory import ExecutionFactory
 from .execution_group import ExecutionGroup
 from .platform_specs import PlatformSpecs
 

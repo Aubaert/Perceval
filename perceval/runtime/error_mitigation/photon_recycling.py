@@ -52,7 +52,7 @@ def _validate_noisy_input(noisy_input: BSCount | BSDistribution, ideal_photon_co
         # Check if a perfect loss-less distribution was passed to mitigate
         raise ValueError("All input states have ideal photon count, no loss to mitigate.")
 
-    target_photon_loss = {ideal_photon_count-1, ideal_photon_count-2}
+    target_photon_loss = {ideal_photon_count - 1, ideal_photon_count - 2}
     obtained_photon_counts = {states.n for states in noisy_input.keys()}
     if not target_photon_loss.issubset(obtained_photon_counts):
         # check if noisy input meets current implementation's statistics criteria
@@ -65,12 +65,14 @@ def photon_recycling(noisy_input: BSCount | BSDistribution, ideal_photon_count: 
     A classical technique to mitigate errors in the output distribution caused by photon
     loss in LO quantum circuits (ref: https://arxiv.org/abs/2405.02278)
 
-    :param noisy_input: Noisy output (Basic State Samples or a distribution)
-    :param ideal_photon_count: expected photon count for a loss-less system
-    :return: photon loss mitigated distribution
+    The input must contain events with one and two fewer photons than the ideal photon count.
+
+    :param noisy_input: Noisy output counts or probability distribution.
+    :param ideal_photon_count: Expected photon count for a lossless system.
+    :return: Photon-loss-mitigated probability distribution.
     """
     get_logger().info(f"Running Photon Recycling on a {len(noisy_input)} states distribution targeting {ideal_photon_count} ideal photons",
-                channel.general)
+                      channel.general)
     # run checks on noisy input before recycling
     _validate_noisy_input(noisy_input, ideal_photon_count)
 
@@ -115,8 +117,9 @@ def photon_recycling(noisy_input: BSCount | BSDistribution, ideal_photon_count: 
 
 
 class PhotonRecycling(AbstractMitigation):
-    """
-    A mitigation layer that performs the photon recycling algorithm internally
+    """Mitigate photon loss by applying photon recycling to computation results.
+
+    The automatic layer applies only to compatible unitary experiments with a photon count of at least 3.
     """
 
     @staticmethod

@@ -81,5 +81,5 @@ Ralph CNOT is 490.01059 times better than Knill CNOT, but needs a measurement to
 Class reference
 ---------------
 
-.. autoclass:: perceval.runtime.job_group.JobGroup
+.. autoclass:: perceval.runtime.legacy.job_group.JobGroup
    :members:

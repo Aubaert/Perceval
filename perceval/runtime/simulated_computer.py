@@ -48,6 +48,7 @@ from .error_mitigation import Imperfections
 class SimulatedComputer(LocalComputer):
     """
     A computer able to perform local simulations
+
     :param backend: The backend to use to perform the simulations. Can be a backend name or a backend instance
     """
 
@@ -87,6 +88,8 @@ class SimulatedComputer(LocalComputer):
 
     def validate_single(self, computation: Computation) -> None:
         super().validate_single(computation)
+        if computation.experiment.input_state is None:
+            raise ValueError("The experiment has no input_state (call `with_input()`)")
         self.check_min_detected_photons_filter(computation)
 
     @property
@@ -118,11 +121,11 @@ class SimulatedComputer(LocalComputer):
 
     @staticmethod
     def _make_input(experiment: Experiment, source: Source):
-        if isinstance(experiment.input_state, SVDistribution) \
-                or (isinstance(experiment.input_state, AnnotatedFockState) and experiment.input_state.has_polarization):
+        if isinstance(experiment.input_state, SVDistribution):
             # Custom input
             return experiment.input_state
-
+        elif isinstance(experiment.input_state, AnnotatedFockState) and experiment.input_state.has_polarization:
+            return SVDistribution(experiment.input_state)
         return source, experiment.input_state
 
     @staticmethod
@@ -141,16 +144,24 @@ class SimulatedComputer(LocalComputer):
               **kwargs) -> dict:
         """
         Computes the probabilities for a given experiment. Does not apply error mitigations
+
         :param experiment: The Experiment to simulate.
+        :param progress_callback: An optional progress callback that will be used to report the progress of the simulation,
+         and possibly cancel the computation.
         :param precision: The precision of the computation.
          Probabilities lower than the biggest input probability times this are ignored. Used only with Probability backends
         :param max_shots: The maximum number of shots to consider. A shot is any event with at least 1 photon
          Used only is the computer has a Sampling backend or if the precision is not given
-        :param max_samples. The maximum number of samples to consider.
+        :param max_samples: The maximum number of samples to consider.
          A sample is any event with at least min_photons photon (defined in the Experiment).
          Used only is the computer has a Sampling backend or if the precision and the max_shots are not given
         :param compilation_seed: A seed to use for the compilation starting point or the random phases
-        :return:
+        :return: A dict with the following fields:\n
+            -  "result": BSDistribution,
+            -  "global_perf": float,
+            -  If compute_physical_logical_perf is True:
+                + "physical_perf": float,
+                + "logical_perf": float,
         """
         if isinstance(self._backend, AStrongSimulationBackend):
             experiment = experiment.use_phase_noise(self.noise, compilation_seed)
@@ -205,6 +216,25 @@ class SimulatedComputer(LocalComputer):
                 progress_callback: ProgressCallback = None,
                 compilation_seed: int = None,
                 **kwargs) -> dict:
+        """
+        Computes the probabilities for a given experiment. Does not apply error mitigations
+
+        :param experiment: The Experiment to simulate.
+        :param progress_callback: An optional progress callback that will be used to report the progress of the simulation,
+         and possibly cancel the computation.
+        :param max_shots: The maximum number of shots to consider. A shot is any event with at least 1 photon
+         Used only is the computer has a Sampling backend or if the precision is not given
+        :param max_samples: The maximum number of samples to consider.
+         A sample is any event with at least min_photons photon (defined in the Experiment).
+         Used only is the computer has a Sampling backend or if the precision and the max_shots are not given
+        :param compilation_seed: A seed to use for the compilation starting point or the random phases
+        :return: A dict with the following fields:\n
+            -  "result": BSSamples,
+            -  "global_perf": float,
+            -  If compute_physical_logical_perf is True:
+                + "physical_perf": float,
+                + "logical_perf": float,
+        """
         if isinstance(self._backend, AStrongSimulationBackend):
             res = self.probs(experiment,
                              progress_callback,
@@ -228,6 +258,25 @@ class SimulatedComputer(LocalComputer):
                      progress_callback: ProgressCallback = None,
                      compilation_seed: int = None,
                      **kwargs) -> dict:
+        """
+        Computes the probabilities for a given experiment. Does not apply error mitigations
+
+        :param experiment: The Experiment to simulate.
+        :param progress_callback: An optional progress callback that will be used to report the progress of the simulation,
+         and possibly cancel the computation.
+        :param max_shots: The maximum number of shots to consider. A shot is any event with at least 1 photon
+         Used only is the computer has a Sampling backend or if the precision is not given
+        :param max_samples: The maximum number of samples to consider.
+         A sample is any event with at least min_photons photon (defined in the Experiment).
+         Used only is the computer has a Sampling backend or if the precision and the max_shots are not given
+        :param compilation_seed: A seed to use for the compilation starting point or the random phases
+        :return: A dict with the following fields:\n
+            -  "result": BSCount,
+            -  "global_perf": float,
+            -  If compute_physical_logical_perf is True:
+                + "physical_perf": float,
+                + "logical_perf": float,
+        """
         if isinstance(self._backend, AStrongSimulationBackend):
             res = self.probs(experiment,
                              progress_callback,

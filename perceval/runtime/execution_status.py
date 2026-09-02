@@ -111,7 +111,7 @@ RunningStatus.UNKNOWN.__doc__ = "An unknown status code was encountered."
 
 class ExecutionStatus:
     """
-    Stores metadata related to a job execution
+    Stores metadata related to an execution
     """
     def __init__(self):
         self._status: RunningStatus = RunningStatus.WAITING
@@ -134,7 +134,7 @@ class ExecutionStatus:
     @property
     def status(self) -> RunningStatus:
         """
-        :return: the job running status
+        :return: the execution running status
         """
         return self._status
 
@@ -144,19 +144,19 @@ class ExecutionStatus:
 
     def start_run(self):
         """
-        Informs that the job is starting.
-        Sets the job start time as the current time and the running status to "RUNNING"
+        Informs that the execution is starting.
+        Sets the execution start time as the current time and the running status to "RUNNING"
         """
         self._running_time_start = time()
         self._status = RunningStatus.RUNNING
 
     def stop_run(self, cause: RunningStatus = RunningStatus.SUCCESS, mesg: str | None = None):
         """
-        Informs that the job has just stopped.
-        Sets the job stop time as the current time.
+        Informs that the execution has just stopped.
+        Sets the execution stop time as the current time.
 
-        :param cause: running status causing the end of the job
-        :param mesg: optional additional message related to the end of the job
+        :param cause: running status causing the end of the execution
+        :param mesg: optional additional message related to the end of the execution
         """
         self._status = cause
         self._completed_time = time()
@@ -167,7 +167,7 @@ class ExecutionStatus:
 
     def update_progress(self, progress: float, phase: str | None = None):
         """
-        Updates the job progress.
+        Updates the execution progress.
 
         :param progress: the current progress (between 0 and 1, 1 meaning 100%)
         :param phase: message related to the current progress
@@ -181,9 +181,9 @@ class ExecutionStatus:
         """
         Set the important times from external information
 
-        :param creation_datetime: the timestamp the job was created
-        :param start_time: the timestamp the job was started
-        :param duration: the duration of the job (in seconds)
+        :param creation_datetime: the timestamp the execution was created
+        :param start_time: the timestamp the execution was started
+        :param duration: the duration of the execution (in seconds)
         """
         self._init_time_start = creation_datetime
         self._running_time_start = start_time
@@ -194,42 +194,42 @@ class ExecutionStatus:
     @property
     def creation_timestamp(self) -> float:
         """
-        :return: the timestamp the job was created
+        :return: the timestamp the execution was created
         """
         return self._init_time_start
 
     @property
     def start_timestamp(self) -> float:
         """
-        :return: the timestamp the job was started
+        :return: the timestamp the execution was started
         """
         return self._running_time_start
 
     @property
     def duration(self) -> float:
         """
-        :return: the duration of the job (in seconds)
+        :return: the duration of the execution (in seconds)
         """
         return self._duration
 
     @property
     def waiting(self) -> bool:
         """
-        :return: whether the job is in "WAITING" status
+        :return: whether the execution is in "WAITING" status
         """
         return self._status == RunningStatus.WAITING
 
     @property
     def running(self) -> bool:
         """
-        :return: whether the job is running (corresponding statuses are "RUNNING" and "CANCEL_REQUESTED")
+        :return: whether the execution is running (corresponding statuses are "RUNNING" and "CANCEL_REQUESTED")
         """
         return self._status in [RunningStatus.RUNNING, RunningStatus.CANCEL_REQUESTED]
 
     @property
     def completed(self) -> bool:
         """
-        :return: whether the job has completed, i.e. not waiting or running anymore (corresponding statuses are
+        :return: whether the execution has completed, i.e. not waiting or running anymore (corresponding statuses are
                  "SUCCESS", "ERROR" and "CANCELED")
         """
         return self._status in [RunningStatus.SUCCESS, RunningStatus.ERROR, RunningStatus.CANCELED]
@@ -237,28 +237,28 @@ class ExecutionStatus:
     @property
     def canceled(self) -> bool:
         """
-        :return: whether the job is in "CANCELED" or "CANCEL_REQUESTED" status
+        :return: whether the execution is in "CANCELED" or "CANCEL_REQUESTED" status
         """
         return self._status in [RunningStatus.CANCELED, RunningStatus.CANCEL_REQUESTED]
 
     @property
     def success(self) -> bool:
         """
-        :return: whether the job is in "SUCCESS" status
+        :return: whether the execution is in "SUCCESS" status
         """
         return self._status in [RunningStatus.SUCCESS]
 
     @property
     def failed(self) -> bool:
         """
-        :return: whether the job has failed to complete (corresponding statuses are "CANCELED" and "ERROR")
+        :return: whether the execution has failed to complete (corresponding statuses are "CANCELED" and "ERROR")
         """
         return self._status in [RunningStatus.CANCELED, RunningStatus.ERROR]
 
     @property
     def maybe_completed(self) -> bool:
         """
-        :return: whether the job has or might have completed (corresponding statuses are "SUCCESS", "ERROR", "CANCELED"
+        :return: whether the execution has or might have completed (corresponding statuses are "SUCCESS", "ERROR", "CANCELED"
                  and "UNKNOWN")
         """
         return self._status in [RunningStatus.SUCCESS, RunningStatus.ERROR, RunningStatus.CANCELED, RunningStatus.UNKNOWN]
@@ -266,21 +266,21 @@ class ExecutionStatus:
     @property
     def unknown(self) -> bool:
         """
-        :return: whether the job status is unknown
+        :return: whether the execution status is unknown
         """
         return self._status in [RunningStatus.UNKNOWN]
 
     @property
     def stop_message(self) -> str | None:
         """
-        :return: the job stop message, if any. In case of a successful job, this will be `None`.
+        :return: the execution stop message, if any. In case of a successful execution, this will be `None`.
         """
         return self._stop_message
 
     @property
     def progress(self) -> float:
         """
-        :return: the current job progress (between 0 and 1, 1 meaning 100%)
+        :return: the current execution progress (between 0 and 1, 1 meaning 100%)
         """
         return self._running_progress
 

@@ -40,22 +40,22 @@ from perceval.utils.constants import KEY_MAX_SHOTS, KEY_MAX_SAMPLES, KEY_GLOBAL_
 from perceval.serialization import Serialization
 
 class CompilationAveraging(AbstractMitigation):
+    """Reduce sensitivity to a single physical compilation by averaging the results over several compilations.
+
+    The requested samples and shots are divided between ``repetitions`` sub-computations, each
+    using a different compilation seed. Their sample counts are combined during post-processing.
+    Commands that do not accept a ``compilation_seed`` parameter are left unchanged.
+
+    :param repetitions: Number of compilations to average. More repetitions require more compilation work.
+    :param starting_seed: Optional first compilation seed. When omitted, choose one randomly.
+    """
 
     APPLY_MIN_PHOTONS = False
     APPLY_LOGICAL_SELECTION = False
 
     def __init__(self, repetitions: int, starting_seed: int = None):
-        """
-        A mitigation process that splits the requested computation into :code:`repetitions` sub-computations,
-        where the requested shots and samples are equally divided, asking for a new compilation seed every time.
-
-        At post-processing, it adds up the results.
-
-        :param repetitions: The number of subdivisions. The greater this number, the more time will be spent on compilation
-        :param starting_seed: Optional, seed to use as a starting point for the compilation seed.
-        """
         self.repetitions = repetitions
-        assert isinstance(self.repetitions, int) and repetitions >= 1,\
+        assert isinstance(self.repetitions, int) and repetitions >= 1, \
             f"Number of repetitions must be a positive integer (got {repetitions})"
         self.starting_seed = starting_seed
 

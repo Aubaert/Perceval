@@ -42,7 +42,7 @@ from perceval.serialization import Serialization
 class DetectorBalancing(AbstractMitigation):
     """
     A mitigation process that adjusts the probabilities of each output state based on the output
-    loss and number of photons in each mode.
+    loss, detector models, and number of photons in each mode.
     """
     # Hypotheses for this mitigation to work:
     #   - the detectors only model photon losses (no dark count)
@@ -52,7 +52,6 @@ class DetectorBalancing(AbstractMitigation):
     # One last hypothesis:
     #   - all states are represented in the results (i.e. bunched states are also represented)
     # Not fulfilling this hypothesis will make the maths wrong, but it should still be better than without mitigation
-
 
     APPLY_MIN_PHOTONS = False
     APPLY_LOGICAL_SELECTION = True  # Actually, all we need is "at least", but it's easier to remove everything

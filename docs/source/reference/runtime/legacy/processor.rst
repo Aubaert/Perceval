@@ -40,7 +40,7 @@ the inverse permutation is not added since it doesn't exist, so modes might move
 
 Composition is a powerful tool to achieve complex processors:
 
-.. figure:: ../../_static/img/complex-processor.png
+.. figure:: ../../../_static/img/complex-processor.png
     :align: center
 
     A processor composed of a Hadamard gate and two heralded CNOT gates.
@@ -211,6 +211,6 @@ and some performance score corresponding to the probability of getting a selecte
 >>> p.probs()["results"]
 BSDistribution(float, {|1,0>: 0.5, |0,1>: 0.5})
 
-.. autoclass:: perceval.runtime.processor.Processor
+.. autoclass:: perceval.runtime.legacy.processor.Processor
    :members:
    :inherited-members:

@@ -55,7 +55,7 @@ class SimulatorFactory:
         """
         :param circuit: The optical circuit to build the simulation layers around.
             The circuit can be a unitary circuit (Circuit object), a list containing positioned unitary components + LC
-            + TD, or a Processor object.
+            + TD, or an Experiment object.
         :param backend: (Optional) Any probampli capable backend instance or name. If no backend is passed, then the
             processor backend name is used if the first parameter's type is Processor. Ultimately, the fallback is a
             SLOS backend instantiated without any configuration (i.e. no mask)
@@ -146,6 +146,6 @@ class SimulatorFactory:
 
         if convert_to_circuit:
             circuit = _unitary_components_to_circuit(circuit, m)
-        # m can only be retrieved from a Processor (and useful only in that case)
+        # m can only be retrieved from an Experiment (and useful only in that case)
         simulator.set_circuit(circuit, m)
         return simulator

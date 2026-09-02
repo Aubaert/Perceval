@@ -55,7 +55,6 @@ def _retrieve_from_response(response: dict, field: str, default_value: T = '', v
         result = default_value
     return result
 
-
 class RemoteJob(Job):
     r"""
     Handle a computation task remotely (i.e. through a Cloud provider) by sending a request body of the form:

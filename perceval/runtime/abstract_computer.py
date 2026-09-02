@@ -39,11 +39,19 @@ from .platform_specs import PlatformSpecs
 from .check_cancel import call_and_check_cancel
 from .command import Command
 
-from perceval.utils import ProgressCallback, partial_progress_callable, ContextManager, NoiseModel, PMetadata
+from perceval.utils import ProgressCallback, partial_progress_callable, ContextManager, NoiseModel, PMetadata, \
+    ProcessorType, encapsulate_manager_list
 from perceval.utils.constants import KEY_RESULTS
 
 
 class AbstractComputer(ABC):
+    """
+    A Computer, able to execute Computations, applying automatically error mitigations.
+    It can handle custom parameters to change how the computation will be done.
+    """
+
+    # Note: a computer must be hashable to be usable in ExecutionGroup,
+    # either by defining both __eq__ and __hash__, or by defining none of them
 
     EMT_POST_PROGRESS_START = 0.8
 
@@ -67,6 +75,7 @@ class AbstractComputer(ABC):
 
     @property
     def mitigations(self) -> list[AbstractMitigation] | None:
+        """The list of error mitigations that the computer will apply, or None if unspecified (use default mitigations)."""
         return self._error_mitigations
 
     @mitigations.setter
@@ -79,14 +88,16 @@ class AbstractComputer(ABC):
 
     @property
     def available_commands(self) -> list[str]:
+        """Returns a list of all available command names available in the computer."""
         return list(self._commands)  # Makes a copy
 
     def reset_parameters(self):
-        # May be overloaded to have default parameters
+        """Reset the parameters to their default values."""
         self._parameters.clear()
 
     @property
     def parameters(self) -> dict[str, Any]:
+        """The computer-specific parameters. The possible items are detailed in 'self.available_parameters'."""
         return self._parameters
 
     @parameters.setter
@@ -103,7 +114,6 @@ class AbstractComputer(ABC):
     def validate_single(self, computation: Computation) -> None:
         """
         :param computation: The computation to validate. This is a computation that is the result of mitigation decomposition.
-        :return:
         """
         if computation.command.name not in self._commands:
             raise ValueError(f"Command '{computation.command.name}' doesn't exist in {self.__class__.__name__}")
@@ -196,6 +206,7 @@ class AbstractComputer(ABC):
         :param out: A potentially externally given dict where to place the results.
          If the computation is an iterator, it can receive be used to retrieve partial results.
         :param progress_callback: A ProgressCallback to monitor the progress and potentially cancel the execution.
+        :return: the filled `out` dict if it was given, or a new dict containing the results.
         """
         res, inserter = self._handle_iterator(computation, out)
 
@@ -216,7 +227,7 @@ class AbstractComputer(ABC):
                      computations: list[tuple[list[Computation], Computation]],
                      inserter: Callable[[dict], None],
                      progress_callback: ProgressCallback = None) -> None:
-        # This method may be overloaded by some executors to be able to "factorize" some computations
+        # This method may be overloaded by some computers to be able to "factorize" some computations
         # For example by factorizing a chip voltage appliance or compilation
         n_iter = len(computations)
 
@@ -234,7 +245,7 @@ class AbstractComputer(ABC):
 
             # Step 2: we post-process for the current computation and insert it in the results
             imperfections = self._get_imperfections(original_computation)
-            inserter(self.post_process(original_computation, res, imperfections, self._error_mitigations,
+            inserter(self.post_process(original_computation, res, imperfections, self._get_local_mitigations(),
                                        partial_progress_callable(batch_callback, self.EMT_POST_PROGRESS_START)))
 
             if len(computations) > 1:
@@ -243,7 +254,7 @@ class AbstractComputer(ABC):
                     return
 
     def _execute_single(self, computation: Computation, progress_callback: ProgressCallback = None) -> dict:
-        # Most of the AbstractComputer specific implementation is in the self._commands
+        # Most of the AbstractComputer specific implementation is in the self._execute_command
         self.validate_single(computation)
         with self._reserve_resource():
             return self._execute_command(computation, progress_callback)
@@ -254,10 +265,11 @@ class AbstractComputer(ABC):
 
     def execute_async(self, computation: Computation | ComputationIterator) -> tuple[list[AbstractMitigation] | None, Imperfections, list[list[AsyncGetter]]]:
         """
-        Asynchronous execution of computation
+        Asynchronous execution of computation.
 
         :param computation: The computation to execute
-        :return: The Error mitigations with which the computation is executed, and the list of objects that can be used to get the results
+        :return: The Error mitigations with which the computation is executed, and the list of objects that can be used to get the results.
+            Beware that the given imperfections that can be used to get the results are those from when the job was launched, not the ones from when it is executed.
         """
         computation.validate()
         computations = self.extend_computation(computation)
@@ -270,12 +282,13 @@ class AbstractComputer(ABC):
                     async_getters: list[list[AsyncGetter]],
                     out: dict = None) -> dict[str, Any]:
         """
-        Get the results for an asynchronous computation
+        Get the results for an asynchronous computation.
+
         :param computation: The original computation that was executed
         :param mitigations: The list of mitigations that were applied when the computation has been launched (as returned by execute_async)
         :param imperfections: The imperfections with which the computations were executed
         :param async_getters: The list of async_getters that point to the executions of the computation (as returned by execute_async)
-        :param out: A dictionary where to place the results.
+        :param out: An in-out dictionary where to place the results.
         """
         res, inserter = self._handle_iterator(computation, out)
 
@@ -311,6 +324,7 @@ class AbstractComputer(ABC):
     @property
     @abstractmethod
     def is_remote(self) -> bool:
+        """Returns true if the computer is remote"""
         pass
 
     def _reserve_resource(self) -> ContextManager:
@@ -324,10 +338,14 @@ class AbstractComputer(ABC):
 
     @property
     def available_jobs(self) -> int:
+        """Returns the number of jobs that can currently be added to the asynchronous queue"""
         return 1
 
     @property
     def specs(self) -> PlatformSpecs:
+        """
+        :return: the specs of the computer.
+        """
         specs = PlatformSpecs()
         specs.commands = list(self._commands.values())
         if self.available_parameters:
@@ -338,6 +356,7 @@ class AbstractComputer(ABC):
 
     @property
     def noise(self):
+        """The noise model representing the computer. Will be used only for simulators"""
         return NoiseModel()
 
     @noise.setter
@@ -347,7 +366,9 @@ class AbstractComputer(ABC):
 
     @property
     @abstractmethod
-    def performance(self):
+    def performance(self) -> dict[str, Any]:
+        """A more detailed characterization of the noise than the noise model,
+        possibly evaluating things that a noise model doesn't know"""
         pass
 
     def start(self) -> None:
@@ -370,7 +391,8 @@ class AbstractComputer(ABC):
 
     @property
     @abstractmethod
-    def type(self):
+    def type(self) -> ProcessorType:
+        """The type of the computer (qpu or simulator)"""
         pass
 
     def apply_configuration(self,
@@ -378,6 +400,10 @@ class AbstractComputer(ABC):
                             noise: NoiseModel = None,
                             parameters: dict[str, Any] = None) -> ContextManager:
         """
+        .. warning::
+           Using this method is generally not safe in an asynchronous context.
+           In that case, make a persistent copy of the computer inside the `with` block, then use the copy.
+
         :param mitigations: The mitigations to apply within the ContextManager. If None, nothing is changed
         :param noise: The noise model to apply within the ContextManager. If None, nothing is changed
         :param parameters: The parameters to apply within the ContextManager. If None, nothing is changed
@@ -398,3 +424,17 @@ class AbstractComputer(ABC):
 
         return ContextManager(lambda: apply(mitigations, noise, parameters),
                               lambda: apply(starting_mitigations, starting_noise, starting_parameters, force = True))
+
+
+def acquire(*computers: AbstractComputer) -> ContextManager:
+    """
+    Acquires any number of computers.
+
+    .. note::
+       Duplicated computers are acquired only once. The acquisition may happen in any order.
+
+    :param computers: The computers to acquire
+    :return: A context manager that starts the computers at enter and stops them at exit.
+    """
+    computers = set(computers)
+    return encapsulate_manager_list(comp.acquire() for comp in computers)

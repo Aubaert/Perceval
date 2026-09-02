@@ -27,8 +27,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
 import time
 from datetime import datetime
+from pathlib import Path
 
 from tqdm import tqdm
 
@@ -38,9 +40,11 @@ from perceval.utils.logging import channel, get_logger
 
 from .execution import Execution
 from .execution_status import RunningStatus
+from .abstract_computer import AbstractComputer
 
 
 FILE_EXT_EGRP = "egrp"
+EGRP_DIR_NAME = "execution_groups"
 
 
 class ExecutionGroup:
@@ -50,9 +54,9 @@ class ExecutionGroup:
     automatically stored with the archive serialization system.
 
     The ExecutionGroup class can perform various tasks such as:
-    - Saving information for a collection of jobs, whether they have been sent to the cloud or not.
-    - Running jobs within the group either in parallel or sequentially.
-    - Rerunning failed jobs within the group.
+    - Saving information for a collection of executions, whether they have been sent to the cloud or not.
+    - Running executions within the group either in parallel or sequentially.
+    - Rerunning failed executions within the group.
     - Retrieving all results at once.
 
     :param name: Name uniquely identifying the group on disk.
@@ -224,11 +228,19 @@ class ExecutionGroup:
         """
         return self._filter_by_running_status([RunningStatus.RUNNING, RunningStatus.WAITING])
 
+    def list_active_computers(self) -> list[AbstractComputer]:
+        """Returns the list of computers having at least one active execution"""
+        return [exe.computer for exe in self.list_active_executions()]
+
     def list_unsuccessful_executions(self) -> list[Execution]:
         """
         Returns a list of all Executions in the group that have run unsuccessfully - errored or canceled
         """
         return self._filter_by_running_status([RunningStatus.ERROR, RunningStatus.CANCELED])
+
+    def list_unsuccessful_computers(self) -> list[AbstractComputer]:
+        """Returns the list of computers having at least one unsuccessful execution"""
+        return [exe.computer for exe in self.list_successful_executions()]
 
     def list_unsent_executions(self) -> list[Execution]:
         """
@@ -236,10 +248,14 @@ class ExecutionGroup:
         """
         return [execution for execution in self._executions if not execution.was_sent]
 
+    def list_unsent_computers(self) -> list[AbstractComputer]:
+        """Returns the list of computers having at least one unsent execution"""
+        return [exe.computer for exe in self.list_unsent_executions()]
+
     def _launch_wait_executions(self, delay: float, rerun: bool,
                                 replace_failed_executions: bool = False, sequential: bool = False) -> None:
         """
-        Launches or reruns jobs in the group on Cloud in a parallel/sequential manner.
+        Launches or reruns executions in the group on Cloud in a parallel/sequential manner.
 
         :param delay: number of seconds to wait between the launch of two consecutive executions
         :param rerun: if True rerun failed executions or run unsent executions
@@ -306,7 +322,7 @@ class ExecutionGroup:
         Launches the unsent executions in the group in a sequential manner with a
         user-specified delay between the completion of one execution and the start of the next.
 
-        :param delay: number of seconds to wait between launching jobs on cloud
+        :param delay: number of seconds to wait between launching executions on cloud
         """
         self._launch_wait_executions(delay, rerun=False, sequential=True)
 
@@ -315,9 +331,9 @@ class ExecutionGroup:
         Reruns Failed executions in the group in a sequential manner with a user-specified delay between the
         completion of one execution and the start of the next.
 
-        :param delay: number of seconds to wait between re-launching jobs on cloud
-        :param replace_failed_executions: Indicates whether a new job created from a rerun should replace the previously
-                                    failed job (defaults to True).
+        :param delay: number of seconds to wait between re-launching executions on cloud
+        :param replace_failed_executions: Indicates whether a new execution created from a rerun should replace the
+                                          previously failed execution (defaults to True).
         """
         # backward compatibility
         replace_failed_executions = kwargs.pop("replace_failed_jobs", replace_failed_executions)

@@ -44,6 +44,20 @@ from perceval.serialization.library.class_registry import ClassRegistry
 
 
 class Execution:
+    """
+    A class aimed at controlling the execution flow of a computation on a given computer.
+    It provides means to compute synchronously or asynchronously, hiding the complexity of handling intermediate objects.
+
+    Depending on the mitigations that are set into the computer, one or several jobs
+    (i.e. a unit computation on the cloud, or a single simulation call) may be created.
+    This complexity is hidden by this object, but may appear on a provider's cloud interface.
+
+    >>> execution = Execution(computation, computer)
+    >>> res = execution(max_shots = 10000)  # Synchronous call - Computation parameters can be given here
+
+    :param computation: The computation to be executed
+    :param computer: The computer that will execute the computation
+    """
 
     def __init__(self, computation: Computation | ComputationIterator, computer: AbstractComputer):
         self._computation = deepcopy(computation)
@@ -96,20 +110,20 @@ class Execution:
     @property
     def name(self) -> str:
         """
-        The job name
+        The execution name, that will be used to name generated jobs
         """
         return self._name
 
     @name.setter
     def name(self, new_name: str):
         if not isinstance(new_name, str):
-            raise TypeError("A job name must be a string")
+            raise TypeError("An execution name must be a string")
         self._name = new_name
 
     @property
     def job_group_name(self) -> str | None:
         """
-        The job group name
+        The execution group name, that will be used to give a job group name to the generated jobs
         """
         return self._job_group_name
 
@@ -132,14 +146,14 @@ class Execution:
 
     def __call__(self, *args, **kwargs) -> dict:
         """
-        Execute the job synchronously
+        Execute the execution synchronously. Shortcut for self.execute_sync().
         """
         return self.execute_sync(*args, **kwargs)
 
     @property
     def status(self) -> ExecutionStatus:
         """
-        The job status metadata structure
+        The execution status metadata structure
         """
         if len(self._getters) > 0 and not self._status.completed:
             all_status = [getter.status for getters in self._getters for getter in getters]
@@ -173,7 +187,7 @@ class Execution:
 
     def cancel(self):
         """
-        Request the cancellation of the job.
+        Request the cancellation of the execution.
         """
         if not self.was_sent:
             raise RuntimeError("Execution has not been launched")
@@ -203,13 +217,23 @@ class Execution:
         """
         if not self.status.failed:
             raise RuntimeError(
-                f"Cannot rerun current job because job status is: {self.status} (should be either CANCELED or ERROR)")
+                f"Cannot rerun current execution because its status is: {self.status} (should be either CANCELED or ERROR)")
 
         return self.clone().execute_async()
 
     def execute_sync(self, *args, allow_partial_results: bool = False, **kwargs) -> dict:
+        """
+        Execute the task synchronously.
+
+        :param args: arguments to pass to the task function
+        :param allow_partial_results: If True, results will be returned even if there is an error somewhere.
+                 Else, the error will be raised
+        :param kwargs: keyword arguments to pass to the task function
+        :return: results dictionary. You can expect a "results" or a "results_list" field, performance scores and other
+                 data corresponding to the computation and computer nature.
+        :raises: RuntimeError if the execution hasn't been launched, or if there is an error and allow_partial_results is False."""
         if self._results:
-            return self._results  # Problem here if we try to reuse a job with different args and kwargs
+            return self._results  # Problem here if we try to reuse an execution with different args and kwargs
 
         self._status.start_run()
         try:
@@ -230,7 +254,7 @@ class Execution:
     def execute_async(self, *args, **kwargs) -> Execution:
         """
         Execute the task asynchronously. This call is non-blocking allowing for concurrency. Results cannot be expected
-        to be ready as soon as this call ends. The results have to be retrieved only when the job status says it's
+        to be ready as soon as this call ends. The results have to be retrieved only when the execution status says it's
         completed.
 
         :param args: arguments to pass to the task function
@@ -247,13 +271,13 @@ class Execution:
 
     def get_results(self, allow_partial_results: bool = False) -> dict:
         """
-        Retrieve the results of the job.
+        Retrieve the results of the execution.
 
         :param allow_partial_results: If True, results will be returned even if there is an error somewhere.
                  Else, the error will be raised
         :return: results dictionary. You can expect a "results" or a "results_list" field, performance scores and other
-                 data corresponding to the job nature.
-        :raises: RuntimeError if the job hasn't been launched, or if there is an error and allow_partial_results is False.
+                 data corresponding to the computation and computer nature.
+        :raises: RuntimeError if the execution hasn't been launched, or if there is an error and allow_partial_results is False.
         """
         if not self.was_sent:
             raise RuntimeError("Execution has not been launched")

@@ -51,6 +51,9 @@ class TomographyMLE(AAlgorithm, metaclass=ProcessorCompatibilityMeta):
     Accelerated Projected Gradient descent algorithm which takes an input guess and
     uses measurements to reconstruct quantum maps - either state or process.
 
+    :param computer: The computer to use to perform the tomography
+    :param experiment: A perceval Experiment with gate (or operation) on which process tomography
+        needs to be performed
     """
     def __init__(self, computer: AbstractComputer, experiment: Experiment, **kwargs):
 
@@ -60,7 +63,7 @@ class TomographyMLE(AAlgorithm, metaclass=ProcessorCompatibilityMeta):
         self._experiment = experiment.copy()
         if odd_modes:
             raise ValueError(
-                f"Input processor has an odd mode count ({experiment.m}) and thus, is not a logical gate")
+                f"Input experiment has an odd mode count ({experiment.m}) and thus, is not a logical gate")
 
         self._gate_logical_perf = None
 
@@ -250,8 +253,9 @@ class StateTomographyMLE(TomographyMLE):
     """
     Maximum likelihood estimations to reconstruct quantum state density matrices.
 
-    :param operator_processor: A perceval processor with gate (or operation) on which state tomography
-        needs to be performed.
+    :param computer: The computer to use to perform the tomography
+    :param experiment: A perceval Experiment with gate (or operation) on which process tomography
+        needs to be performed
     """
     def __init__(self, computer: AbstractComputer, experiment: Experiment, **kwargs):
         super().__init__(computer, experiment, **kwargs)
@@ -259,7 +263,7 @@ class StateTomographyMLE(TomographyMLE):
         self._povm_data()  # to set self._data_function -> all the measured data
 
     def _povm_data(self):
-        # Performing a POVM (positive operator value measure) on the quantum processor
+        # Performing a POVM (positive operator value measure) on the quantum experiment
         # in the informationally complete Pauli basis, i.e. choosing all the eigenvectors of the Pauli operators.
         # They are |0>,|1>,|+>,|->,|i+>,|i->
 
@@ -319,8 +323,9 @@ class ProcessTomographyMLE(TomographyMLE, AProcessTomography):
     """
     Maximum likelihood estimations to reconstruct a given quantum process.
 
-    :param operator_processor: A perceval processor with gate (or operation) on which state tomography
-        needs to be performed.
+    :param computer: The computer to use to perform the tomography
+    :param experiment: A perceval Experiment with gate (or operation) on which process tomography
+        needs to be performed
     """
     def __init__(self, computer: AbstractComputer, experiment: Experiment, **kwargs):
         TomographyMLE.__init__(self, computer, experiment, **kwargs)
@@ -331,7 +336,7 @@ class ProcessTomographyMLE(TomographyMLE, AProcessTomography):
         self._guess_choi_matrix = np.kron(self._guess_choi_seed, self._guess_choi_seed) / 16
 
     def _povm_data(self):
-        # Performing a POVM (positive operator value measure) on the quantum processor
+        # Performing a POVM (positive operator value measure) on the quantum experiment
         # in the informationally complete Pauli basis, i.e. choosing all the eigenvectors of the Pauli operators.
         # They are |0>,|1>,|+>,|->,|i+>,|i->
 
