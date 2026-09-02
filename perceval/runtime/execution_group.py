@@ -228,9 +228,9 @@ class ExecutionGroup:
         """
         return self._filter_by_running_status([RunningStatus.RUNNING, RunningStatus.WAITING])
 
-    def list_active_computers(self) -> set[AbstractComputer]:
-        """Returns the set of computers having at least one active execution"""
-        return {exe.computer for exe in self.list_active_executions()}
+    def list_active_computers(self) -> list[AbstractComputer]:
+        """Returns the list of computers having at least one active execution"""
+        return [exe.computer for exe in self.list_active_executions()]
 
     def list_unsuccessful_executions(self) -> list[Execution]:
         """
@@ -238,9 +238,9 @@ class ExecutionGroup:
         """
         return self._filter_by_running_status([RunningStatus.ERROR, RunningStatus.CANCELED])
 
-    def list_unsuccessful_computers(self) -> set[AbstractComputer]:
-        """Returns the set of computers having at least one unsuccessful execution"""
-        return {exe.computer for exe in self.list_successful_executions()}
+    def list_unsuccessful_computers(self) -> list[AbstractComputer]:
+        """Returns the list of computers having at least one unsuccessful execution"""
+        return [exe.computer for exe in self.list_successful_executions()]
 
     def list_unsent_executions(self) -> list[Execution]:
         """
@@ -248,9 +248,9 @@ class ExecutionGroup:
         """
         return [execution for execution in self._executions if not execution.was_sent]
 
-    def list_unsent_computers(self) -> set[AbstractComputer]:
-        """Returns the set of computers having at least one unsent execution"""
-        return {exe.computer for exe in self.list_unsent_executions()}
+    def list_unsent_computers(self) -> list[AbstractComputer]:
+        """Returns the list of computers having at least one unsent execution"""
+        return [exe.computer for exe in self.list_unsent_executions()]
 
     def _launch_wait_executions(self, delay: float, rerun: bool,
                                 replace_failed_executions: bool = False, sequential: bool = False) -> None:

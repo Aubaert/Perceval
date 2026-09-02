@@ -39,7 +39,8 @@ from .platform_specs import PlatformSpecs
 from .check_cancel import call_and_check_cancel
 from .command import Command
 
-from perceval.utils import ProgressCallback, partial_progress_callable, ContextManager, NoiseModel, PMetadata, ProcessorType
+from perceval.utils import ProgressCallback, partial_progress_callable, ContextManager, NoiseModel, PMetadata, \
+    ProcessorType, encapsulate_manager_list
 from perceval.utils.constants import KEY_RESULTS
 
 
@@ -423,3 +424,17 @@ class AbstractComputer(ABC):
 
         return ContextManager(lambda: apply(mitigations, noise, parameters),
                               lambda: apply(starting_mitigations, starting_noise, starting_parameters, force = True))
+
+
+def acquire(*computers: AbstractComputer) -> ContextManager:
+    """
+    Acquires any number of computers.
+
+    .. warning::
+       Duplicated computers are acquired only once. The acquisition order is not guaranteed.
+
+    :param computers: The computers to acquire
+    :return: A context manager that starts the computers at enter and stops them at exit.
+    """
+    computers = set(computers)
+    return encapsulate_manager_list(comp.acquire() for comp in computers)
