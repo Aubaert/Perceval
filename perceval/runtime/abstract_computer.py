@@ -430,8 +430,8 @@ def acquire(*computers: AbstractComputer) -> ContextManager:
     """
     Acquires any number of computers.
 
-    .. warning::
-       Duplicated computers are acquired only once. The acquisition order is not guaranteed.
+    .. note::
+       Duplicated computers are acquired only once. The acquisition may happen in any order.
 
     :param computers: The computers to acquire
     :return: A context manager that starts the computers at enter and stops them at exit.

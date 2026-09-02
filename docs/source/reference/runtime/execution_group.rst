@@ -49,7 +49,7 @@ script can load the group by name and run its unsent executions sequentially:
 >>>
 >>> group = pcvl.ExecutionGroup("compare_knill_and_ralph_cnot")
 >>> # Starts the computer of the first execution - Assume the same computer is used for all executions
->>> with pcvl.acquire(*(computer.acquire() for computer in group.list_unsent_computers())):
+>>> with pcvl.acquire(*group.list_unsent_computers()):
 ...     group.run_sequential(0)  # Launch the second execution after the first one finishes
 
 Use :code:`group.run_parallel()` to run as many executions concurrently as their computers allow. The corresponding

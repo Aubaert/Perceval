@@ -131,7 +131,9 @@ class ContextManagerDecorator(ContextManager):
 
         except:
             super().__exit__(*sys.exc_info())  # We must still exit here since we entered
-            raise  # We are forced to exit here so we don't enter inside the managed body
+            # We have to exit here so we don't enter inside the managed body
+            # Note: this prevents any upper layer to handle the exception - this is a python limit
+            raise
         return res
 
     def __exit__(self, exc_type: type | None, exc_val: Exception | None, exc_tb: TracebackType | None):
