@@ -28,7 +28,7 @@
 # SOFTWARE.
 
 import warnings
-from typing import Iterable, Any
+from typing import Iterable, Any, Type
 
 from .descriptors import ADescriptor, DescriptorClass, PartialRecord
 from .class_registry import ClassRegistry
@@ -47,7 +47,7 @@ class Archive:
     def __init__(self, raise_on_unregistred_class: bool = True):
         self.raise_on_unregistred_class = raise_on_unregistred_class
         self.roots: list[int] = [] # list of ids
-        self.memo: list[tuple[str, ADescriptor]] = [] # list of (tag, desc) or NoValue
+        self.memo: list[tuple[str, ADescriptor] | Type[Archive.NoValue]] = [] # list of (tag, desc) or NoValue
 
 
 class OutputArchive(Archive):
@@ -122,7 +122,10 @@ class OutputArchive(Archive):
         self.memo.extend( [ self.NoValue ] * (len(self.ids) - len(self.memo)) )
 
     # To storable object
-    def to_json(self):
+    def to_json(self) -> dict:
+        """
+        :return: A dict representation of the archive, that can be converted to str using json.dumps
+        """
         res = {"header": self.header,
                "archive_version": self.archive_version,
                "roots": self.roots}
@@ -209,6 +212,10 @@ class InputArchive(Archive):
     # Storable object parsing
     @classmethod
     def from_json(cls, json_obj: dict) -> "InputArchive":  # TODO: python 3.11: use Self
+        """
+        :param json_obj: a dict representing an archive, typically obtained by using an OutputArchive.to_json() method.
+        :return: A new InputArchive containing the data that were stored in the archive.
+        """
         header = json_obj.get("header", "")
         if header != cls.header:
             raise RuntimeError(f"invalid archive")
