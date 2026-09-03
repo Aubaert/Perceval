@@ -152,6 +152,7 @@ class LocalComputer(AComputer, ABC):
     def _execute_command_async(self, computation: Computation) -> _ThreadedGetter:
         # Copy so external changes won't interfere
         # TODO: The copy creates a problem with the reserve_resource() in case the lock is instance-bounded
+        # TODO: replace by deepcopy when available on all backends
         return _ThreadedGetter(copy(self)._execute_single, args=(computation,))
 
     @property
