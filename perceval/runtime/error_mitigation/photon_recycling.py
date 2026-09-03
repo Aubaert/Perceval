@@ -116,7 +116,7 @@ def photon_recycling(noisy_input: BSCount | BSDistribution, ideal_photon_count: 
     return mitigated_distribution
 
 
-class PhotonRecycling(AMitigation):
+class PhotonRecycling(AMitigation, tag="PhotonRecycling"):
     """Mitigate photon loss by applying photon recycling to computation results.
 
     The automatic layer applies only to compatible unitary experiments with a photon count of at least 3.

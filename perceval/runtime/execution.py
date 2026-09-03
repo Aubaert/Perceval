@@ -227,6 +227,13 @@ class Execution:
 
         return self.clone().execute_async()
 
+    def reset_results_cache(self) -> None:
+        """
+        Reset the results cache.
+        May be useful in case of a communication error during :code:`get_results()` with :code:`allow_partial_results=True`
+        """
+        self._results = {}
+
     def execute_sync(self, *args, allow_partial_results: bool = False, **kwargs) -> dict:
         """
         Execute the task synchronously.

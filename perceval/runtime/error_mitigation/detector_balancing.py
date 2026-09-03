@@ -39,7 +39,7 @@ from ..computation import Computation
 from perceval.utils.constants import KEY_RESULTS, KEY_GLOBAL_PERF, KEY_PHYSICAL_PERF
 from perceval.serialization import Serialization
 
-class DetectorBalancing(AMitigation):
+class DetectorBalancing(AMitigation, tag="DetectorBalancing"):
     """
     A mitigation process that adjusts the probabilities of each output state based on the output
     loss, detector models, and number of photons in each mode.

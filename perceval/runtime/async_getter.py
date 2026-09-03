@@ -47,7 +47,6 @@ class AsyncGetter(ABC):
     """
 
     def __init__(self):
-        self._results = None
         self._status = ExecutionStatus()
 
     @property

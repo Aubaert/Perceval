@@ -330,6 +330,19 @@ class PlatformSpecs(dict):
         assert all(isinstance(val, AMitigation) for val in value)
         self["default_mitigations"] = value
 
+    @property
+    def known_mitigations(self) -> list[str]:
+        if "known_mitigations" in self:
+            return self._getitem("known_mitigations")
+        return []
+
+    @known_mitigations.setter
+    def known_mitigations(self, value: list[str]):
+        assert isinstance(value, list)
+        assert all(isinstance(val, str) for val in value)
+        self["known_mitigations"] = value
+
+
 class SerializerSpecs(SerializerDict):
     type = PlatformSpecs
     class_tag = "Specs"

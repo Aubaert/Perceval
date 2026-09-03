@@ -42,7 +42,7 @@ from ._helpers.distinguishable_photon_mitigation import (generate_obb_states, ap
                                                          generate_obb_partition)
 
 
-class DistinguishablePhotonMitigation(AMitigation):
+class DistinguishablePhotonMitigation(AMitigation, tag="DistinguishablePhoton"):
     """
     Partial distinguishability and g2 mitigation.
     Only FockState inputs are supported.

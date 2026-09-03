@@ -54,6 +54,7 @@ class _RemoteGetter(AsyncGetter):
 
     def __init__(self, communication_layer: CommunicationLayer, remote_id: RemoteId):
         super().__init__()
+        self._results = {}
         self._communication_layer = communication_layer
         self._remote_id = remote_id
         self._last_status_refresh = 0.
@@ -107,8 +108,12 @@ class RemoteComputer(AComputer):
         self._specs = communication_layer.get_specs()
         self._perfs = communication_layer.get_performances()
         self._custom_noise: NoiseModel | None = None
-        self.use_mitigations_remotely: bool = True  # TODO: detect if the target supports mitigations ?
+        self.use_mitigations_remotely: bool = True
         self._available_jobs = 0
+
+    @property
+    def name(self) -> str:
+        return self._communication_layer.name
 
     @property
     def noise(self):
@@ -121,7 +126,14 @@ class RemoteComputer(AComputer):
         self._custom_noise = noise
 
     def _get_local_mitigations(self) -> list[AMitigation]:
-        return [] if self.use_mitigations_remotely else super()._get_local_mitigations()
+        use_mitigations_remotely = self.use_mitigations_remotely
+        if self._error_mitigations is not None:
+            for mitigation in self._error_mitigations:
+                if not mitigation.is_known_from(self.specs.known_mitigations):
+                    use_mitigations_remotely = False
+                    break
+
+        return [] if use_mitigations_remotely else super()._get_local_mitigations()
 
     @property
     def specs(self) -> PlatformSpecs:
@@ -154,7 +166,6 @@ class RemoteComputer(AComputer):
 
     @staticmethod
     def check_min_detected_photons_filter(experiment: Experiment) -> None:
-        # TODO: if we have an iterator, the min_photons_filter can be set only by each iteration
         if experiment.min_photons_filter is None:
             raise ValueError("The value of min_detected_photons is not set."
                              " Use the method experiment.min_detected_photons_filter(value).")

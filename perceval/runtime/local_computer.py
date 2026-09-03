@@ -47,6 +47,7 @@ class _ThreadedGetter(AsyncGetter):
 
     def __init__(self, method: Callable, args: tuple=(), kwargs: dict = None):
         super().__init__()
+        self._results = None
         self._thread = Thread(target=self._encapsulate(method), args=args, kwargs=kwargs)
         self._canceled = False
         self._thread.start()

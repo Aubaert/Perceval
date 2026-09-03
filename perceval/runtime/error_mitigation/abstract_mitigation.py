@@ -42,6 +42,17 @@ class AMitigation(ABC):
 
     APPLY_MIN_PHOTONS = True  # By default, avoid any accident at the cost of performance
     APPLY_LOGICAL_SELECTION = True
+    KNOWN_MITIGATIONS = []
+    _TAG: str
+
+    def __init_subclass__(cls, /, tag=None, **kwargs):
+        super().__init_subclass__(**kwargs)
+        tag = tag or cls.__name__
+        AMitigation.KNOWN_MITIGATIONS.append(tag)
+        cls._TAG = tag
+
+    def is_known_from(self, known_classes: list[str]) -> bool:
+        return self._TAG in known_classes
 
     @abstractmethod
     def extend_computation(self, computation: Computation, imperfections: Imperfections) -> list[Computation]:

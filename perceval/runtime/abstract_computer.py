@@ -359,6 +359,7 @@ class AComputer(ABC):
         specs.type = self.type
         specs.pcvl_version = PMetadata.version()
         specs.default_mitigations = self.mitigations
+        specs.known_mitigations = AMitigation.KNOWN_MITIGATIONS
         return specs
 
     @property
