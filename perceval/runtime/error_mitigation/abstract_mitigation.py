@@ -85,8 +85,6 @@ class AMitigation(ABC):
 
         res, physical_perf, logical_perf = self._apply_filtering(computation.experiment, result[KEY_RESULTS])
 
-        # TODO: find a way to transmit the correct number of states between layers
-        #       We should not use computation.parameters
         res = ConversionHelper.convert_to(computation.command.name, res, **computation.parameters)
         result[KEY_RESULTS] = res
 

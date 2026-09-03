@@ -81,8 +81,6 @@ class DetectorBalancing(AMitigation, tag="DetectorBalancing"):
         for n in range(len(res_by_n) - 1, -1, -1):
             for state in res_by_n[n].keys():
                 distributions = compute_distributions(state, detectors, {})
-
-                # prob threshold ?
                 state_dist = BSDistribution.list_tensor_product(distributions)
 
                 # If we were able to detect state, it means that the detectors model should have state in its results

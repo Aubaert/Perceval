@@ -57,8 +57,7 @@ class ComputerProxy(CommunicationLayer):
     def send(self, payload: dict) -> RemoteId:
         with PayloadGenerator.payload_applier(self.computer, payload):
             computation = PayloadGenerator.get_computation(payload)
-            # I'm not sure that payload_applier works well with execute_async, so we make a copy of self.computer
-            return Execution(computation, copy(self.computer)).execute_async()
+            return Execution(computation, self.computer).execute_async()
 
     def get_results(self, remote_id: RemoteId) -> dict:
         while not remote_id.is_complete:

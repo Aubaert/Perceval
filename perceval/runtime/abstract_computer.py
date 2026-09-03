@@ -179,18 +179,18 @@ class AComputer(ABC):
                      original_computation: Computation,
                      results: list[dict | AsyncGetter],
                      imperfections: Imperfections,
-                     emts: list[AMitigation] = None,
                      progress_callback: ProgressCallback = None) -> dict:
         if not original_computation.command.apply_emt:
-            emts = None
-        return self._post_process(original_computation, emts or [], results, imperfections, progress_callback)[0]
+            emts = []
+        else:
+            emts = self._get_local_mitigations()
+        return self._post_process(original_computation, emts, results, imperfections, progress_callback)[0]
 
     def _post_process(self, computation: Computation, emts: list[AMitigation], results: list,
                       imperfections: Imperfections,
                       progress_callback: ProgressCallback = None, current_index: int = 0) -> tuple[dict, int]:
         # current_index supposes that results are in the order requested by self.extend_computation()
         if len(emts) == 0:
-            # Do we split this evenly for all mitigations ?
             if progress_callback is not None:
                 progress_callback((current_index + 1) / len(results), "Post processing results")
             res = results[current_index]
@@ -253,7 +253,7 @@ class AComputer(ABC):
 
             # Step 2: we post-process for the current computation and insert it in the results
             imperfections = self._get_imperfections(original_computation)
-            inserter(self.post_process(original_computation, res, imperfections, self._get_local_mitigations(),
+            inserter(self.post_process(original_computation, res, imperfections,
                                        partial_progress_callable(batch_callback, self.EMT_POST_PROGRESS_START)))
 
             if len(computations) > 1:
@@ -300,7 +300,7 @@ class AComputer(ABC):
 
         try:
             for getters, comp in zip(async_getters, computation):
-                inserter(self.post_process(comp, getters, imperfections, self._get_local_mitigations()))
+                inserter(self.post_process(comp, getters, imperfections))
         except Exception as e:
             inserter({KEY_RESULTS: str(e)})
             raise
