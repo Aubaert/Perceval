@@ -47,6 +47,10 @@ class ComputerProxy(CommunicationLayer):
     def __init__(self, computer: AbstractComputer) -> None:
         self.computer = computer
 
+    @property
+    def name(self) -> str:
+        return self.computer.name
+
     def get_specs(self) -> PlatformSpecs:
         return self.computer.specs
 

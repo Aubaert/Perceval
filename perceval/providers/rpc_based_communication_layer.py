@@ -36,12 +36,11 @@ from requests import HTTPError
 from perceval.serialization import InputArchive, Serialization, deserialize, serialize, OutputArchive
 from perceval.utils.constants import KEY_JOB_NAME, KEY_JOB_CONTEXT, KEY_RESULT_MAPPING, \
     KEY_MAPPING_PARAMETERS, KEY_RESULTS_LIST, KEY_ITERATION, KEY_RESULTS, KEY_PLATFORM_NAME, KEY_JOB_GROUP_NAME, \
-    KEY_COMMAND, KEY_MAX_SHOTS, KEY_MAX_SAMPLES
+    KEY_COMMAND, KEY_MAX_SHOTS, KEY_MAX_SAMPLES, KEY_GLOBAL_PERF, KEY_PHYSICAL_PERF, KEY_LOGICAL_PERF
 from perceval.utils.logging import channel, get_logger
 
 from perceval.runtime import ExecutionStatus, RunningStatus, Command, PlatformSpecs, PayloadUpdater, PayloadGenerator, \
     CommunicationLayer, CommandFactory
-
 
 PERFS_KEY = "perfs"
 T = TypeVar('T')
@@ -95,6 +94,10 @@ class RPCBasedCommunicationLayer(CommunicationLayer):
                 self._perfs.update(platform_details[PERFS_KEY])
 
             self._last_fetch_time = time.time()
+
+    @property
+    def name(self) -> str:
+        return self._rpc_handler.name
 
     def get_specs(self) -> PlatformSpecs:
         return self._specs
@@ -158,6 +161,9 @@ class RPCBasedCommunicationLayer(CommunicationLayer):
                     res[KEY_RESULTS] = result_mapping_function(res[KEY_RESULTS], **mapping_args)
             else:
                 results[KEY_RESULTS] = result_mapping_function(results[KEY_RESULTS], **delta_parameters)
+
+        if KEY_GLOBAL_PERF not in results and KEY_PHYSICAL_PERF in results and KEY_LOGICAL_PERF in results:
+            results[KEY_GLOBAL_PERF] = results[KEY_PHYSICAL_PERF] * results[KEY_LOGICAL_PERF]
         return results
 
     def _handle_status_error(self, error: Exception, remote_id: RemoteId, refresh_errors: int):

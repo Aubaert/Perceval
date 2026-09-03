@@ -28,6 +28,7 @@
 # SOFTWARE.
 
 from abc import ABC
+from copy import copy
 from threading import Thread
 from typing import Callable, Any
 
@@ -48,7 +49,6 @@ class _ThreadedGetter(AsyncGetter):
         super().__init__()
         self._thread = Thread(target=self._encapsulate(method), args=args, kwargs=kwargs)
         self._canceled = False
-        self._user_callback: ProgressCallback | None = None  # Do we want to pass a user callback if this is async ?
         self._thread.start()
 
     def _update_status(self) -> None:
@@ -96,8 +96,6 @@ class _ThreadedGetter(AsyncGetter):
         self._status.update_progress(progress, message)
         if self._canceled:
             return True
-        if self._user_callback is not None:
-            return self._user_callback(progress, message)
         return self._canceled
 
     def is_complete(self) -> bool:
@@ -151,7 +149,9 @@ class LocalComputer(AbstractComputer, ABC):
                 raise e
 
     def _execute_command_async(self, computation: Computation) -> _ThreadedGetter:
-        return _ThreadedGetter(self._execute_single, args=(computation,))
+        # Copy so external changes won't interfere
+        # TODO: The copy creates a problem with the reserve_resource() in case the lock is instance-bounded
+        return _ThreadedGetter(copy(self)._execute_single, args=(computation,))
 
     @property
     def is_remote(self) -> bool:

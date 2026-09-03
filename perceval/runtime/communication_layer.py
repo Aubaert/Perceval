@@ -49,6 +49,12 @@ class CommunicationLayer(ABC):
     shared per-job state and make any mutable cache or session state concurrency-safe.
     """
 
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """The name of the remote platform."""
+        pass
+
     @abstractmethod
     def get_specs(self) -> PlatformSpecs:
         """Return the capabilities and constraints of the target platform.

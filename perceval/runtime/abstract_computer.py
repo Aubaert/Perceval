@@ -114,6 +114,11 @@ class AbstractComputer(ABC):
         """
         return {}
 
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        pass
+
     def validate_single(self, computation: Computation) -> None:
         """
         :param computation: The computation to validate. This is a computation that is the result of mitigation decomposition.
@@ -280,7 +285,6 @@ class AbstractComputer(ABC):
         return deepcopy(self._get_local_mitigations()), imperfections, self._execute_all_async(computations)
 
     def get_results(self, computation: Computation | ComputationIterator,
-                    mitigations: list[AbstractMitigation],
                     imperfections: Imperfections,
                     async_getters: list[list[AsyncGetter]],
                     out: dict = None) -> dict[str, Any]:
@@ -288,7 +292,6 @@ class AbstractComputer(ABC):
         Get the results for an asynchronous computation.
 
         :param computation: The original computation that was executed
-        :param mitigations: The list of mitigations that were applied when the computation has been launched (as returned by execute_async)
         :param imperfections: The imperfections with which the computations were executed
         :param async_getters: The list of async_getters that point to the executions of the computation (as returned by execute_async)
         :param out: An in-out dictionary where to place the results.
@@ -297,7 +300,7 @@ class AbstractComputer(ABC):
 
         try:
             for getters, comp in zip(async_getters, computation):
-                inserter(self.post_process(comp, getters, imperfections, mitigations))
+                inserter(self.post_process(comp, getters, imperfections, self._get_local_mitigations()))
         except Exception as e:
             inserter({KEY_RESULTS: str(e)})
             raise
@@ -407,6 +410,7 @@ class AbstractComputer(ABC):
         .. warning::
            Using this method is generally not safe in an asynchronous context.
            In that case, make a persistent copy of the computer inside the `with` block, then use the copy.
+           Async usage with :class:`Execution` should be safe.
 
         :param mitigations: The mitigations to apply within the ContextManager. If None, nothing is changed
         :param noise: The noise model to apply within the ContextManager. If None, nothing is changed

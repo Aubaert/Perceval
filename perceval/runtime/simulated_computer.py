@@ -73,6 +73,10 @@ class SimulatedComputer(LocalComputer):
             self._backend = backend
 
     @property
+    def name(self) -> str:
+        return self._backend.name
+
+    @property
     def noise(self) -> NoiseModel:
         return self._noise
 

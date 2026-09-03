@@ -51,7 +51,6 @@ from perceval.serialization import Serialization, InputArchive
 
 class _RemoteGetter(AsyncGetter):
     STATUS_REFRESH_DELAY = 1  # minimum job status refresh period (in s)
-    _MAX_ERROR = 5
 
     def __init__(self, communication_layer: CommunicationLayer, remote_id: RemoteId):
         super().__init__()
@@ -279,13 +278,8 @@ class RemoteComputer(AbstractComputer):
                 get_logger().info(f"Couldn't find a way to send any job for {int(start_info - start)} seconds - queue is full")
             self._available_jobs = self._communication_layer.get_availability()
 
-        self._available_jobs -= 1
-
-    def _release_resource(self):
-        self._available_jobs += 1
-
     def _reserve_resource(self) -> ContextManager:
-        return ContextManager(self._take_resource, self._release_resource)
+        return ContextManager(self._take_resource)
 
     def prepare_payload(self, computation: Computation) -> dict:
         if self._error_mitigations is not None:

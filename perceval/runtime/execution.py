@@ -38,7 +38,8 @@ from .computation import Computation
 from .computation_iterator import ComputationIterator
 from .execution_status import ExecutionStatus, RunningStatus
 from .error_mitigation import AbstractMitigation, Imperfections
-from perceval.utils import ProgressCallback
+
+from perceval.utils import ProgressCallback, deprecated
 from perceval.serialization import InputArchive, Serialization
 from perceval.serialization.library.class_registry import ClassRegistry
 
@@ -68,6 +69,7 @@ class Execution:
         self._status: ExecutionStatus = ExecutionStatus()
 
         # Storage for async run
+        self._parameters = {}  # computer parameters
         self._mitigations: list[AbstractMitigation] = []
         self._imperfections: Imperfections | None = None
         self._getters: list[list[AsyncGetter]] = []
@@ -85,6 +87,9 @@ class Execution:
         This custom callback is only used for synchronous execution.
         For asynchronous execution, call self.cancel() to cancel,
         or self.status, self.is_complete... to monitor the progress.
+
+        .. note::
+           This callback is never serialized.
 
         :param callback: callback function
         """
@@ -133,7 +138,8 @@ class Execution:
             raise TypeError("A job group name must be a non-empty string")
         self._job_group_name = new_name
 
-    def set_job_group_name(self, new_name: str):  # TODO: legacy; remove ?
+    @deprecated(version="1.3.0", reason="Use the `job_group_name` property instead")
+    def set_job_group_name(self, new_name: str):
         self.job_group_name = new_name
 
     def _transmit_args(self, *args, **kwargs):
@@ -267,6 +273,7 @@ class Execution:
         self._status.start_run()
         self._transmit_args(*args, **kwargs)
         self._mitigations, self._imperfections, self._getters = self._computer.execute_async(self._computation)
+        self._parameters = deepcopy(self._computer.parameters)
         return self
 
     def get_results(self, allow_partial_results: bool = False) -> dict:
@@ -289,10 +296,11 @@ class Execution:
             raise RuntimeError(f"Execution failed: {self._status.stop_message}")
 
         try:
-            self._computer.get_results(self._computation, self._mitigations, self._imperfections, self._getters, self._results)
+            with self._computer.apply_configuration(self._mitigations, self._imperfections.noise, self._parameters):
+                self._computer.get_results(self._computation, self._imperfections, self._getters, self._results)
         except Exception as e:
             if not allow_partial_results:
-                self._results = {}  # Return None as in legacy ?
+                self._results = {}
                 raise e
         return self._results
 
@@ -310,7 +318,8 @@ _EXECUTION_MEMBERS = [
     "_job_group_name",
     "_results",
     "_status",
-    "_mitigations",  # Async memory must be the last ones due to the way _save_execution() is written
+    "_parameters",  # Async memory must be the last ones due to the way _save_execution() is written
+    "_mitigations",
     "_imperfections",
     "_getters",
 ]
@@ -328,7 +337,7 @@ def _save_execution(execution: Execution, archive):
     if all(_getter_is_serializable(getter) for getters in execution._getters for getter in getters):
         return archive.save_attr(execution, _EXECUTION_MEMBERS)
     else:
-        return archive.save_attr(execution, _EXECUTION_MEMBERS[:-3])
+        return archive.save_attr(execution, _EXECUTION_MEMBERS[:-4])
 
 
 def _load_execution(
@@ -340,6 +349,7 @@ def _load_execution(
     archive.load_attr(execution, members)
     execution._user_cb = None
     if not hasattr(execution, "_getters"):  # Other possibility: store them with initial value
+        execution._parameters = {}
         execution._getters = []
         execution._noise = None
         execution._mitigations = []
