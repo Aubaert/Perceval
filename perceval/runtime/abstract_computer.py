@@ -271,7 +271,7 @@ class AComputer(ABC):
     def _execute_command(self, computation: Computation, progress_callback: ProgressCallback = None) -> dict:
         pass
 
-    def execute_async(self, computation: Computation | ComputationIterator) -> tuple[Imperfections, list[list[AsyncGetter]]]:
+    def execute_async(self, computation: Computation | ComputationIterator) -> tuple[list[AMitigation], Imperfections, list[list[AsyncGetter]]]:
         """
         Asynchronous execution of computation.
 
@@ -282,7 +282,7 @@ class AComputer(ABC):
         computation.validate()
         computations = self.extend_computation(computation)
         imperfections = deepcopy(self._get_imperfections(computation))
-        return imperfections, self._execute_all_async(computations)
+        return deepcopy(self._get_local_mitigations()), imperfections, self._execute_all_async(computations)
 
     def get_results(self, computation: Computation | ComputationIterator,
                     imperfections: Imperfections,

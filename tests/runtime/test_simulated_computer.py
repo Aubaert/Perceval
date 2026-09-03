@@ -144,7 +144,7 @@ def test_execute_async():
     computer = SimulatedComputer("SLOS")
     computation = Computation(computer.get_command("probs"), experiment)
 
-    noise, getters = computer.execute_async(computation)
+    _, noise, getters = computer.execute_async(computation)
 
     assert len(getters) == 1
     assert len(getters[0]) == 1

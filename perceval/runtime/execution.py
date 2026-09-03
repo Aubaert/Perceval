@@ -279,8 +279,7 @@ class Execution:
 
         self._status.start_run()
         self._transmit_args(*args, **kwargs)
-        self._imperfections, self._getters = self._computer.execute_async(self._computation)
-        self._mitigations = deepcopy(self._computer.mitigations) or []
+        self._mitigations, self._imperfections, self._getters = self._computer.execute_async(self._computation)
         self._parameters = deepcopy(self._computer.parameters)
         return self
 
