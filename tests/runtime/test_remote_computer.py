@@ -31,7 +31,7 @@ import time
 from copy import copy
 from typing import TypeAlias
 
-from perceval import AbstractComputer, SimulatedComputer, Experiment, FockState, Computation, BSDistribution, ExecutionStatus, \
+from perceval import AComputer, SimulatedComputer, Experiment, FockState, Computation, BSDistribution, ExecutionStatus, \
     Unitary, BS, PS, NoiseModel, Circuit, Detector, FFCircuitProvider, Command, P, PayloadGenerator, Execution
 from perceval.runtime.computation_iterator import ComputationIterator
 from perceval.runtime.platform_specs import PlatformSpecs
@@ -44,7 +44,7 @@ RemoteId: TypeAlias = Execution
 
 class ComputerProxy(CommunicationLayer):
 
-    def __init__(self, computer: AbstractComputer) -> None:
+    def __init__(self, computer: AComputer) -> None:
         self.computer = computer
 
     @property

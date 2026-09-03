@@ -33,11 +33,11 @@ from copy import deepcopy
 
 from .check_cancel import cancel_requested
 from .async_getter import AsyncGetter
-from .abstract_computer import AbstractComputer
+from .abstract_computer import AComputer
 from .computation import Computation
 from .computation_iterator import ComputationIterator
 from .execution_status import ExecutionStatus, RunningStatus
-from .error_mitigation import AbstractMitigation, Imperfections
+from .error_mitigation import AMitigation, Imperfections
 
 from perceval.utils import ProgressCallback, deprecated
 from perceval.serialization import InputArchive, Serialization
@@ -60,7 +60,7 @@ class Execution:
     :param computer: The computer that will execute the computation
     """
 
-    def __init__(self, computation: Computation | ComputationIterator, computer: AbstractComputer):
+    def __init__(self, computation: Computation | ComputationIterator, computer: AComputer):
         self._computation = deepcopy(computation)
         self._computer = computer
         self._name = computation.job_name
@@ -70,7 +70,7 @@ class Execution:
 
         # Storage for async run
         self._parameters = {}  # computer parameters
-        self._mitigations: list[AbstractMitigation] = []
+        self._mitigations: list[AMitigation] = []
         self._imperfections: Imperfections | None = None
         self._getters: list[list[AsyncGetter]] = []
 
@@ -109,7 +109,7 @@ class Execution:
         return self._computation
 
     @property
-    def computer(self) -> AbstractComputer:
+    def computer(self) -> AComputer:
         return self._computer
 
     @property

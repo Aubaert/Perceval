@@ -36,7 +36,7 @@ from perceval.utils import ProgressCallback, parse_signature
 from perceval.components import Experiment
 
 from .execution_status import RunningStatus
-from .abstract_computer import AbstractComputer
+from .abstract_computer import AComputer
 from .computation import Computation
 from .async_getter import AsyncGetter
 from .command import Command
@@ -102,7 +102,7 @@ class _ThreadedGetter(AsyncGetter):
         return not self._thread.is_alive()
 
 
-class LocalComputer(AbstractComputer, ABC):
+class LocalComputer(AComputer, ABC):
     """An abstract computer for local computer. Must implement at least "probs", "sample_count", and "samples" methods."""
 
     def __init__(self):

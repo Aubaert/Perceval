@@ -299,7 +299,7 @@ class SimulatedComputer(LocalComputer):
         return res
 
     def log_resources(self, method: str, experiment: Experiment, extra_parameters: dict):
-        """Log resources of the AbstractComputer
+        """Log resources of the AComputer
 
         :param method: name of the method used
         :param extra_parameters: extra parameters to log.

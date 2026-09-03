@@ -30,7 +30,7 @@
 import random
 from copy import deepcopy, copy
 
-from .abstract_mitigation import AbstractMitigation
+from .abstract_mitigation import AMitigation
 from .imperfections import Imperfections
 from ..computation import Computation
 
@@ -39,7 +39,7 @@ from perceval.utils.constants import KEY_MAX_SHOTS, KEY_MAX_SAMPLES, KEY_GLOBAL_
     KEY_LOGICAL_PERF, KEY_RESULTS
 from perceval.serialization import Serialization
 
-class CompilationAveraging(AbstractMitigation):
+class CompilationAveraging(AMitigation):
     """Reduce sensitivity to a single physical compilation by averaging the results over several compilations.
 
     The requested samples and shots are divided between ``repetitions`` sub-computations, each

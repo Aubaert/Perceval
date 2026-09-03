@@ -34,10 +34,10 @@ from typing import Callable
 from .check_cancel import call_and_check_cancel
 from .communication_layer import CommunicationLayer, RemoteId
 from .computation import Computation
-from .abstract_computer import AbstractComputer
+from .abstract_computer import AComputer
 from .computation_iterator import ComputationIterator
 from .platform_specs import PlatformSpecs
-from .error_mitigation import AbstractMitigation, Imperfections
+from .error_mitigation import AMitigation, Imperfections
 from .execution_status import RunningStatus
 from .simulated_computer import SimulatedComputer
 from .async_getter import AsyncGetter
@@ -90,7 +90,7 @@ class _RemoteGetter(AsyncGetter):
         return self._results
 
 
-class RemoteComputer(AbstractComputer):
+class RemoteComputer(AComputer):
     """
     A computer that sends Computations to a remote platform.
 
@@ -120,7 +120,7 @@ class RemoteComputer(AbstractComputer):
     def noise(self, noise: NoiseModel | None):
         self._custom_noise = noise
 
-    def _get_local_mitigations(self) -> list[AbstractMitigation]:
+    def _get_local_mitigations(self) -> list[AMitigation]:
         return [] if self.use_mitigations_remotely else super()._get_local_mitigations()
 
     @property

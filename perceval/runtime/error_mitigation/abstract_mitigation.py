@@ -38,7 +38,7 @@ from perceval.utils.constants import KEY_RESULTS, KEY_GLOBAL_PERF, KEY_PHYSICAL_
 from perceval.components import Experiment
 
 
-class AbstractMitigation(ABC):
+class AMitigation(ABC):
 
     APPLY_MIN_PHOTONS = True  # By default, avoid any accident at the cost of performance
     APPLY_LOGICAL_SELECTION = True
