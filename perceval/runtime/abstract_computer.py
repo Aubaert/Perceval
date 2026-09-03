@@ -271,18 +271,18 @@ class AComputer(ABC):
     def _execute_command(self, computation: Computation, progress_callback: ProgressCallback = None) -> dict:
         pass
 
-    def execute_async(self, computation: Computation | ComputationIterator) -> tuple[list[AMitigation] | None, Imperfections, list[list[AsyncGetter]]]:
+    def execute_async(self, computation: Computation | ComputationIterator) -> tuple[Imperfections, list[list[AsyncGetter]]]:
         """
         Asynchronous execution of computation.
 
         :param computation: The computation to execute
-        :return: The Error mitigations with which the computation is executed, and the list of objects that can be used to get the results.
+        :return: The imperfections of the computer when the execution was launched, and the list of objects that can be used to get the results.
             Beware that the given imperfections that can be used to get the results are those from when the job was launched, not the ones from when it is executed.
         """
         computation.validate()
         computations = self.extend_computation(computation)
         imperfections = deepcopy(self._get_imperfections(computation))
-        return deepcopy(self._get_local_mitigations()), imperfections, self._execute_all_async(computations)
+        return imperfections, self._execute_all_async(computations)
 
     def get_results(self, computation: Computation | ComputationIterator,
                     imperfections: Imperfections,

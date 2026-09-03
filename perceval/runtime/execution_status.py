@@ -274,7 +274,7 @@ class ExecutionStatus:
         """
         :return: the execution stop message, if any. In case of a successful execution, this will be `None`.
         """
-        return self._message if self._completed_time is not None else None
+        return self._message if self.failed else None
 
     @property
     def progress(self) -> float:

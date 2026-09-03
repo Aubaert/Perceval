@@ -120,12 +120,12 @@ def test_remote_computer_execute_async():
     e.min_detected_photons_filter(1)
 
     computation = Computation(remote_computer.get_command("probs"), e)
-    mitigations, noise, getter = remote_computer.execute_async(computation)
+    noise, getter = remote_computer.execute_async(computation)
 
     while not getter[0][0].is_complete:
         time.sleep(0.1)
 
-    res = remote_computer.get_results(computation, mitigations, noise, getter)
+    res = remote_computer.get_results(computation, noise, getter)
     assert res["results"] == BSDistribution(FockState([1, 0]))
 
     assert getter[0][0].is_complete
@@ -169,7 +169,7 @@ def test_remote_computer_execute_async_iterator():
     computation.add_iteration(input_state=FockState([1, 0]))
     computation.add_iteration(input_state=FockState([0, 1]))
 
-    mitigations, noise, getter = remote_computer.execute_async(computation)
+    noise, getter = remote_computer.execute_async(computation)
 
     assert len(getter) == 1, "Iterator must not be decomposed when there is no local mitigations"
     assert len(getter[0]) == 1, "Iterator must not be decomposed when there is no local mitigations"
@@ -177,7 +177,7 @@ def test_remote_computer_execute_async_iterator():
     while not getter[0][0].is_complete:
         time.sleep(0.1)
 
-    res = remote_computer.get_results(computation, mitigations, noise, getter)
+    res = remote_computer.get_results(computation, noise, getter)
 
     assert isinstance(res, dict)
     assert "results_list" in res

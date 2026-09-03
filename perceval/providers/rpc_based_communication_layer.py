@@ -202,7 +202,7 @@ class RPCBasedCommunicationLayer(CommunicationLayer):
             job_status.update_progress(_retrieve_from_response(response, 'progress', 0., float),
                                        _retrieve_from_response(response, 'progress_message'))
         if job_status.failed:
-            job_status._stop_message = _retrieve_from_response(response, 'status_message')
+            job_status._message = _retrieve_from_response(response, 'status_message')
 
         self._extract_job_times(job_status, response)
         return job_status
