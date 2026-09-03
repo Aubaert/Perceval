@@ -34,7 +34,7 @@ from perceval import LocalComputer, Execution, Computation, Experiment, NoiseMod
     FockState
 import perceval as pcvl
 from perceval.serialization import Serialization
-from utils.constants import KEY_PHYSICAL_PERF
+from perceval.utils.constants import KEY_PHYSICAL_PERF
 
 
 # This test file is heavily inspired and copied from the tests on the old Job class
