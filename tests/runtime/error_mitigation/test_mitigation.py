@@ -45,6 +45,11 @@ class DummyMitigation(AMitigation):
         return copy.copy(results[0])
 
 
+def test_known_mitigation():
+    mitigation = DummyMitigation()
+    assert mitigation.is_known_from(AMitigation.KNOWN_MITIGATIONS)
+
+
 def test_min_photon_filter():
     mitigation = DummyMitigation()
     imperfections = Imperfections(NoiseModel(), [])
